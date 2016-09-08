@@ -9,6 +9,7 @@ GLOBALS
 
 char *curr_char;
 int i = 0;
+int n = 0;
 int starting;
 int ending;
 
@@ -49,6 +50,60 @@ char *tokenize(char *tempstr){
 	return token;
 }
 
+char sorter(char ** strings, int len){
+
+   	char * temp = strings[0];
+   	strings[0] = strings[1];
+   	strings[1] = temp;
+	return ** strings;
+}
+
+
+/* A typical recursive C/C++  implementation of QuickSort */
+ 
+/* This function takes last element as pivot, places 
+   the pivot element at its correct position in sorted 
+   array, and places all smaller (smaller than pivot)
+   to left of pivot and all greater elements to right 
+   of pivot */
+int partition (char ** arr, int l, int h)
+{
+	//printf("Partitioning");
+    char * x = arr[h];
+    int i = (l - 1);
+ 
+    for (int j = l; j <= h- 1; j++)
+    {
+        if (strcmp(arr[j],x) < 0)
+        {
+            i++;
+		   	char * temp = arr[i];
+		   	arr[i] = arr[j];
+		   	arr[j] = temp;
+        }
+    }
+
+   	char * temp = arr[i+1];
+   	arr[i+1] = arr[h];
+   	arr[h] = temp;
+    return (i + 1);
+}
+ 
+/* A[] --> Array to be sorted, 
+  l  --> Starting index, 
+  h  --> Ending index */
+void quickSort(char ** A, int l, int h)
+{
+	//printf("in quick sort");
+    if (l < h)
+    {        
+        /* Partitioning index */
+        int p = partition(A, l, h); 
+        quickSort(A, l, p - 1);  
+        quickSort(A, p + 1, h);
+    }
+}
+
 int main(int argc, char **argv){
 	curr_char = argv[1];
 	char *input_str = argv[1];
@@ -59,10 +114,9 @@ int main(int argc, char **argv){
 	struct Node *head = 0;
 	struct Node *tail = 0;
 	struct Node *next;
-
-	int linked_list_length = 0;
 	
 	while(curr_char[i] != '\0' && i < length_of_input){
+		n++;
 		starting = i;
 		char *outputted_token = tokenize(input_str);
 
@@ -73,29 +127,32 @@ int main(int argc, char **argv){
 		if(head == 0){
 			head = p;
 			tail = p;
-			linked_list_length++;
 		}else{
 			tail->next = p;
 			tail = p;
-			linked_list_length++;
 		}
 
 		i++;
 	}
-
-	printf("%d\n", linked_list_length);
-	char *token_list[linked_list_length];
-	int place = 0;
-
-	for(p = head; p != 0 ; p = p->next){
-		printf("%s\n", p->value);
-		token_list[place] = p->value;
-		place++;
+	printf("Length: %d\n",n);
+	char **strings = (char**)malloc(n*sizeof(char*));
+	n = 0;
+	int linked_list_length = 0;
+	for(p = head; p != 0 ; p = p->next, n++){
+		strings[n] = p->value;
+		linked_list_length++;
 	}
 
-	for(int a = 0; a < linked_list_length; a++){
-		printf("TOKEN AT %d is %s\n", a, token_list[a]);
-	}
+   quickSort(strings, 0,linked_list_length-1);
+   //sorter(strings, linked_list_length);
+
+   printf("Before sorting the list is: \n");
+   for( n = 0 ; n < linked_list_length; n++ ) 
+   {
+      printf("%s ", strings[n]);
+      printf("\n");
+   }
+
 
 	return 0;
 }
