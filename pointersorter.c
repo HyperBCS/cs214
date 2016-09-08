@@ -59,6 +59,8 @@ int main(int argc, char **argv){
 	struct Node *head = 0;
 	struct Node *tail = 0;
 	struct Node *next;
+
+	int linked_list_length = 0;
 	
 	while(curr_char[i] != '\0' && i < length_of_input){
 		starting = i;
@@ -71,20 +73,29 @@ int main(int argc, char **argv){
 		if(head == 0){
 			head = p;
 			tail = p;
+			linked_list_length++;
 		}else{
 			tail->next = p;
 			tail = p;
+			linked_list_length++;
 		}
 
 		i++;
 	}
 
-	int linked_list_length = 0;
+	printf("%d\n", linked_list_length);
+	char *token_list[linked_list_length];
+	int place = 0;
+
 	for(p = head; p != 0 ; p = p->next){
 		printf("%s\n", p->value);
-		linked_list_length++;
+		token_list[place] = p->value;
+		place++;
 	}
-	printf("%d\n", linked_list_length);
+
+	for(int a = 0; a < linked_list_length; a++){
+		printf("TOKEN AT %d is %s\n", a, token_list[a]);
+	}
 
 	return 0;
 }
