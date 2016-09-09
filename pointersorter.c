@@ -35,7 +35,7 @@ char *tokenize(char *tempstr){
 	}
 
 	ending = i;
-	char *token = (char*)malloc((ending-starting)*(sizeof(char)));
+	char *token = (char*)malloc((ending-starting+1)*(sizeof(char)));
 	
 	int j;
 	int x = 0;
@@ -49,38 +49,36 @@ char *tokenize(char *tempstr){
 	return token;
 }
 
-char sorter(char ** strings, int len){
-	char * temp = strings[0];
-	strings[0] = strings[1];
-	strings[1] = temp;
-	return ** strings;
-}
-
-int partition (char ** arr, int l, int h){
-	char * x = arr[h];
-	int i = (l - 1);
+/*
+Performs partitioning for the array which includes placing all the words less than pivot to left of pivot and greater words to the right.
+*/
+int partition (char ** words, int s, int f){
+	char * x = words[f];
+	int i = (s - 1);
  	int j;
-	for (j = l; j <= h- 1; j++){
-
-		if (strcmp(arr[j],x) < 0){
+	for (j = s; j <= f - 1; j++){
+		if (strcmp(words[j],x) < 0){
 			i++;
-			char * temp = arr[i];
-			arr[i] = arr[j];
-			arr[j] = temp;
+			char * temp = words[i];
+			words[i] = words[j];
+			words[j] = temp;
 		}
 	}
 	
-	char * temp = arr[i+1];
-	arr[i+1] = arr[h];
-	arr[h] = temp;
+	char * temp = words[i+1];
+	words[i+1] = words[f];
+	words[f] = temp;
 	return (i + 1);
 }
 
-void quickSort(char ** A, int l, int h){
-	if (l < h){
-		int p = partition(A, l, h); 
-		quickSort(A, l, p - 1);  
-		quickSort(A, p + 1, h);
+/*
+Recursively partitions the array. s is starting, and f is ending index. Arr is the input array of words
+*/
+void quickSort(char ** arr, int s, int f){
+	if (s < f){
+		int p = partition(arr, s, f); 
+		quickSort(arr, s, p - 1);  
+		quickSort(arr, p + 1, f);
 	}
 }
 
@@ -139,6 +137,9 @@ int main(int argc, char **argv){
 		printf("%s\n", strings[n]);
    }
 
+   /*
+   Freeing dynamic memory allocation
+   */
    free(strings);
    for (p = head; p != 0; p = next){
 		next = p->next;
