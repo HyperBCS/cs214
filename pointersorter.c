@@ -87,7 +87,7 @@ void quickSort(char ** A, int l, int h){
 int main(int argc, char **argv){
 	if (argc != 2) {
 		fprintf(stderr, "ERROR: No Arguments Detected!\n");
-		exit(1);
+		return 1;
 	}
 
 	curr_char = argv[1];
@@ -128,6 +128,11 @@ int main(int argc, char **argv){
 	for(p = head; p != 0 ; p = p->next, n++){
 		strings[n] = p->value;
 		linked_list_length++;
+	}
+
+	if(linked_list_length == 0){
+		fprintf(stderr, "ERROR: Blank String!\n");
+		return 1;
 	}
 
    quickSort(strings, 0,linked_list_length-1);
