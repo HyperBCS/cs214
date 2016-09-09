@@ -31,7 +31,6 @@ char *tokenize(char *tempstr){
 		if(!isalpha(curr_char[i])){
 			break;
 		}
-		printf("%c\n", curr_char[i]);
 		i++;
 	}
 
@@ -51,24 +50,13 @@ char *tokenize(char *tempstr){
 }
 
 char sorter(char ** strings, int len){
-
    	char * temp = strings[0];
    	strings[0] = strings[1];
    	strings[1] = temp;
 	return ** strings;
 }
 
-
-/* A typical recursive C/C++  implementation of QuickSort */
- 
-/* This function takes last element as pivot, places 
-   the pivot element at its correct position in sorted 
-   array, and places all smaller (smaller than pivot)
-   to left of pivot and all greater elements to right 
-   of pivot */
-int partition (char ** arr, int l, int h)
-{
-	//printf("Partitioning");
+int partition (char ** arr, int l, int h){
     char * x = arr[h];
     int i = (l - 1);
  
@@ -88,16 +76,9 @@ int partition (char ** arr, int l, int h)
    	arr[h] = temp;
     return (i + 1);
 }
- 
-/* A[] --> Array to be sorted, 
-  l  --> Starting index, 
-  h  --> Ending index */
-void quickSort(char ** A, int l, int h)
-{
-	//printf("in quick sort");
-    if (l < h)
-    {        
-        /* Partitioning index */
+
+void quickSort(char ** A, int l, int h){
+    if (l < h){
         int p = partition(A, l, h); 
         quickSort(A, l, p - 1);  
         quickSort(A, p + 1, h);
@@ -105,9 +86,13 @@ void quickSort(char ** A, int l, int h)
 }
 
 int main(int argc, char **argv){
+	if (argc != 2) {
+		fprintf(stderr, "ERROR: No Arguments Detected!\n");
+		exit(1);
+	}
+
 	curr_char = argv[1];
 	char *input_str = argv[1];
-	printf("%s\n", input_str);
 	int length_of_input = strlen(input_str);
 
 	struct Node *p;
@@ -137,7 +122,7 @@ int main(int argc, char **argv){
 
 		i++;
 	}
-	printf("Length: %d\n",n);
+
 	char **strings = (char**)malloc(n*sizeof(char*));
 	n = 0;
 	int linked_list_length = 0;
@@ -147,14 +132,15 @@ int main(int argc, char **argv){
 	}
 
    quickSort(strings, 0,linked_list_length-1);
-
-   printf("After sorting the list is: \n");
-   for( n = 0 ; n < linked_list_length; n++ ) 
-   {
-      printf("is %s ", strings[n]);
-      printf("\n");
+   for( n = 0 ; n < linked_list_length; n++ ){
+   		printf("%s\n", strings[n]);
    }
 
+   free(strings);
+   for (p = head; p != 0; p = next){
+   		next = p->next;
+   		free(p);
+   }
 
 	return 0;
 }
