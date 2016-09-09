@@ -60,10 +60,9 @@ int partition (char ** arr, int l, int h){
     char * x = arr[h];
     int i = (l - 1);
  
-    for (int j = l; j <= h- 1; j++)
-    {
-        if (strcmp(arr[j],x) < 0)
-        {
+    for (int j = l; j <= h- 1; j++){
+
+        if (strcmp(arr[j],x) < 0){
             i++;
 		   	char * temp = arr[i];
 		   	arr[i] = arr[j];
