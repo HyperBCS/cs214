@@ -70,7 +70,7 @@ int partition (char ** arr, int l, int h){
         }
     }
     
-    char * temp = arr[i+1];
+	char * temp = arr[i+1];
 	arr[i+1] = arr[h];
 	arr[h] = temp;
 	return (i + 1);
