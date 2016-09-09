@@ -100,7 +100,6 @@ int main(int argc, char **argv){
 	struct Node *next;
 	
 	while(curr_char[i] != '\0' && i < length_of_input){
-		n++;
 		starting = i;
 		char *outputted_token = tokenize(input_str);
 		if(strlen(outputted_token) <= 0){
@@ -108,6 +107,7 @@ int main(int argc, char **argv){
 			continue;
 		}
 		p = (struct Node *)malloc(sizeof(struct Node));
+		n++;
 		p->value = outputted_token;
 		p->next = 0;
 
@@ -121,7 +121,6 @@ int main(int argc, char **argv){
 
 		i++;
 	}
-
 	char **strings = (char**)malloc(n*sizeof(char*));
 	n = 0;
 	int linked_list_length = 0;
