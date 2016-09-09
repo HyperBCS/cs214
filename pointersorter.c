@@ -50,26 +50,26 @@ char *tokenize(char *tempstr){
 }
 
 char sorter(char ** strings, int len){
-   	char * temp = strings[0];
-   	strings[0] = strings[1];
-   	strings[1] = temp;
+	char * temp = strings[0];
+	strings[0] = strings[1];
+	strings[1] = temp;
 	return ** strings;
 }
 
 int partition (char ** arr, int l, int h){
-    char * x = arr[h];
-    int i = (l - 1);
+	char * x = arr[h];
+	int i = (l - 1);
  
-    for (int j = l; j <= h- 1; j++){
+	for (int j = l; j <= h- 1; j++){
 
-        if (strcmp(arr[j],x) < 0){
-            i++;
-		   	char * temp = arr[i];
-		   	arr[i] = arr[j];
-		   	arr[j] = temp;
-        }
-    }
-    
+		if (strcmp(arr[j],x) < 0){
+			i++;
+			char * temp = arr[i];
+			arr[i] = arr[j];
+			arr[j] = temp;
+		}
+	}
+	
 	char * temp = arr[i+1];
 	arr[i+1] = arr[h];
 	arr[h] = temp;
@@ -77,11 +77,11 @@ int partition (char ** arr, int l, int h){
 }
 
 void quickSort(char ** A, int l, int h){
-    if (l < h){
-        int p = partition(A, l, h); 
-        quickSort(A, l, p - 1);  
-        quickSort(A, p + 1, h);
-    }
+	if (l < h){
+		int p = partition(A, l, h); 
+		quickSort(A, l, p - 1);  
+		quickSort(A, p + 1, h);
+	}
 }
 
 int main(int argc, char **argv){
@@ -132,13 +132,13 @@ int main(int argc, char **argv){
 
    quickSort(strings, 0,linked_list_length-1);
    for( n = 0 ; n < linked_list_length; n++ ){
-   		printf("%s\n", strings[n]);
+		printf("%s\n", strings[n]);
    }
 
    free(strings);
    for (p = head; p != 0; p = next){
-   		next = p->next;
-   		free(p);
+		next = p->next;
+		free(p);
    }
 
 	return 0;
