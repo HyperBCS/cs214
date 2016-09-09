@@ -101,6 +101,7 @@ int main(int argc, char **argv){
 		starting = i;
 		char *outputted_token = tokenize(input_str);
 		if(strlen(outputted_token) <= 0){
+			free(outputted_token);
 			i++;
 			continue;
 		}
@@ -108,7 +109,6 @@ int main(int argc, char **argv){
 		n++;
 		p->value = outputted_token;
 		p->next = 0;
-
 		if(head == 0){
 			head = p;
 			tail = p;
@@ -129,12 +129,14 @@ int main(int argc, char **argv){
 
 	if(linked_list_length == 0){
 		fprintf(stderr, "ERROR: Blank String!\n");
+		free(strings);
 		return 1;
 	}
 
    quickSort(strings, 0,linked_list_length-1);
    for( n = 0 ; n < linked_list_length; n++ ){
 		printf("%s\n", strings[n]);
+		free(strings[n]);
    }
 
    /*
