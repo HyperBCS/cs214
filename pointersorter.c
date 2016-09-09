@@ -119,7 +119,10 @@ int main(int argc, char **argv){
 		n++;
 		starting = i;
 		char *outputted_token = tokenize(input_str);
-
+		if(strlen(outputted_token) <= 0){
+			i++;
+			continue;
+		}
 		p = (struct Node *)malloc(sizeof(struct Node));
 		p->value = outputted_token;
 		p->next = 0;
@@ -144,12 +147,11 @@ int main(int argc, char **argv){
 	}
 
    quickSort(strings, 0,linked_list_length-1);
-   //sorter(strings, linked_list_length);
 
-   printf("Before sorting the list is: \n");
+   printf("After sorting the list is: \n");
    for( n = 0 ; n < linked_list_length; n++ ) 
    {
-      printf("%s ", strings[n]);
+      printf("is %s ", strings[n]);
       printf("\n");
    }
 
