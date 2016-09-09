@@ -49,6 +49,12 @@ char *tokenize(char *tempstr){
 	return token;
 }
 
+void swap(char ** word, int a, int b){
+	char * temp = word[a];
+	word[a] = word[b];
+	word[b] = temp;
+}
+
 /*
 Performs partitioning for the array which includes placing all the words less than pivot to left of pivot and greater words to the right.
 */
@@ -59,17 +65,13 @@ int partition (char ** words, int s, int f){
 	for (j = s; j <= f - 1; j++){
 		if (strcmp(words[j],x) < 0){
 			i++;
-			char * temp = words[i];
-			words[i] = words[j];
-			words[j] = temp;
+			swap(words,i,j);
 		}
 	}
-	
-	char * temp = words[i+1];
-	words[i+1] = words[f];
-	words[f] = temp;
+	swap(words,i+1,f);
 	return (i + 1);
 }
+
 
 /*
 Recursively partitions the array. s is starting, and f is ending index. Arr is the input array of words
