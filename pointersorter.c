@@ -63,7 +63,7 @@ int partition (char ** words, int s, int f){
 	int i = (s - 1);
  	int j;
 	for (j = s; j <= f - 1; j++){
-		if (strcmp(words[j],x) < 0){
+		if (strcasecmp(words[j],x) < 0){
 			i++;
 			swap(words,i,j);
 		}
