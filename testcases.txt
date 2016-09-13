@@ -1,0 +1,79 @@
+/*NETID STUFF HERE
+
+
+*/
+
+
+Expected Input ./sorter "g b c a d H"
+Expected Output			
+a									
+b
+c
+d
+g
+H
+Comment: General Case of random single character seperated by single space
+
+Expected Input: ./sort "lazy Dog Jump aEplE"
+Expected Output:
+aPplE						
+Dog
+Jump
+lazy
+Comment: General Case of words seperated by single space
+
+Expected Input: ./sort "lazy         dog          jump            apple"												
+Expected Output:
+apple						
+dog
+jump
+lazy
+Comment: General Case of words seperated by multiple spaces
+
+Expected Input: ./sort "    lazy DOG jump apple    "
+Expected Output:
+apple						
+DOG
+jump
+lazy
+Comment: General Case of words seperated by single space with many white spaces padding edges
+
+Expected Input: ./sort "@@@lazy43534dog44jump55apple39485$\(##\&"
+Expected Output:
+apple						
+dog
+jump
+lazy
+Comment: General Case of words seperated by special charactesr and numbers between words and padding edges
+
+Expedted Input:  ./sort   "zed poi poi poi poi abe"
+Expected Output: 
+abe
+poi
+poi
+poi
+poi
+zed
+Comment: Case with repeated words.
+
+Expected Input: ./sort   "apple"
+Expected Output: apple
+Comment: Testing with only 1 input
+
+Expected Input: ./sort   "a"
+Expected Output: a
+Comment: Testing with only 1 character
+
+
+Expected Input: ./sort  
+Expected Output:
+ERROR: No Arguments Detected!
+Comment: Case with no arguments supplied
+
+Expected Input: ./sort ""
+Expected Output: ERROR: Blank String!
+Comment: Case with blank string
+
+Expected Input: ./sort   "875374857345384^^"
+Expected Output: ERROR: Blank String!
+Comment: Case with no alphabetic characters
