@@ -10,5 +10,6 @@
 int foo2(int i);
 
 void *mymalloc(int size, char* file, int line);
+void listmem();
 
 #endif
