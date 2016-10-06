@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 static char total_memory[5000];
+int block_size = 5000;
+
 
 typedef struct memory_block {
 	int size;
@@ -27,10 +29,13 @@ void listmem(){
 }
 
 void *mymalloc(int len, char* file, int line){
+	if(len == 0){
+		return head;
+	}
 	static int defined;
 	if(defined == 0){
 		head->allocated = 0;
-		head->size = 5000 - sizeof(mem_block);
+		head->size = block_size - sizeof(mem_block);
 		head->next = 0;
 		defined = 1;
 	}
@@ -46,21 +51,96 @@ void *mymalloc(int len, char* file, int line){
 			}
 		}
 	}
-	ptr->allocated = 1;
-	int temp_size = ptr->size;
-	ptr->size = len;
-	if(ptr->size != temp_size){
-		mem_block *node = (mem_block*)((char*)ptr+sizeof(mem_block)+ptr->size);
+	if(len != ptr->size){
+		mem_block *node = (mem_block*)((char*)ptr+sizeof(mem_block)+len);
 		node->allocated = 0;
 		if(ptr->next == 0){
-			node->size = (int)((char*)head+5000-(char*)node);
-			ptr->next = node;
+			node->size = (int)((char*)head+block_size-(char*)node-sizeof(mem_block));
 		} else{
-			node->size = (int)((char*)node->next - (char*)node+node->size+sizeof(mem_block));
+			node->size = (int)((char*)ptr->next - (char*)ptr-len-sizeof(mem_block));
 			node->next = ptr->next;
-			ptr->next = node;
+		}
+		if(node->size >0){
+		ptr->next = node;
+		} else if(node->size < 0){
+			printf("NO ROOM\n");
+			return 0;
+		}
+	ptr->size = len;
+	ptr->allocated = 1;
+	}
+	return ptr+1;
+}
+
+void myfree(void *point, char* file, int line){
+	if(point == 0){
+		printf("NULL POINTER\n");
+		return;
+	}
+	mem_block *node = point-sizeof(mem_block);
+	if(node->allocated == 1){
+		node->allocated = 0;
+	} else if(node->allocated != 1 || node->allocated != 0){
+		printf("POINTER NOT A MALLOC ADDRESS\n");
+		return;
+	}
+	else{
+		printf("POINTER ALREADY FREED\n");
+		return;
+	}
+	mem_block *prev = 0;
+	mem_block *ptr = head;
+	while(ptr != node){
+		prev = ptr;
+		ptr = ptr->next;
+	}
+	if(prev != 0){
+		// prev->alloc = 0 next-alloc = NULL
+		if(ptr->next == 0 && prev->allocated == 0){
+			//printf("Case 1\n");
+			prev->size = (int)((char*)head+block_size-(char*)prev-sizeof(mem_block));
+			prev->next = ptr->next;
+		// prev->alloc = 0 next-alloc = 1
+		} else if(ptr->next->allocated != 0 && prev->allocated == 0){
+			//printf("Case 2\n");
+			prev->size = (int)((char*)ptr->next - (char*)prev-sizeof(mem_block));
+			prev->next = ptr->next;
+		// prev->alloc = 1 next-alloc = 0 next->next = null
+		} else if(ptr->next->allocated == 0 && prev->allocated != 0 && ptr->next->next == 0){
+			//printf("Case 3\n");
+			ptr->size = (int)((char*)head+block_size-(char*)ptr-sizeof(mem_block));
+			ptr->next = 0;
+		// prev->alloc = 0 next-alloc = 0 next->next = null
+		} else if(ptr->next->allocated == 0 && prev->allocated == 0 && ptr->next->next == 0){ 
+			//printf("Case 4\n");
+			prev->size = (int)((char*)head+block_size - (char*)prev-sizeof(mem_block));
+			prev->next = 0;
+		// prev->alloc = 0 next-alloc = 0
+		} else if(ptr->next->allocated == 0 && prev->allocated == 0){
+			//printf("Case 5\n");
+			prev->size = (int)((char*)ptr->next->next - (char*)prev-sizeof(mem_block));
+			prev->next = ptr->next->next;
+		// prev-> alloc = 1 next->alloc = 0
+		} else if(ptr->next->allocated == 0 && prev->allocated != 0){
+			//printf("Case 6\n");
+			ptr->size = (int)((char*)ptr->next->next - (char*)ptr-sizeof(mem_block));
+			ptr->next = ptr->next->next;
+		} else{
+			//printf("NO CASE!\n");
+		}
+	} else{
+		// prev->alloc = null next-alloc = 0
+		 if(ptr->next->allocated == 0 && ptr->next->next == 0){
+			//printf("Case 7\n");
+			ptr->next = 0;
+			ptr->size = (int)((char*)head+block_size-(char*)ptr-sizeof(mem_block));
+		// prev->alloc = null next-alloc = 0
+		} else if(ptr->next->allocated == 0){
+			//printf("Case 8\n");
+			ptr->size = (int)((char*)ptr->next->next-(char*)ptr-sizeof(mem_block));
+			ptr->next = ptr->next->next;
+		} else{
+			//printf("NO CASE!\n");
 		}
 	}
-
-	return ptr;
 }

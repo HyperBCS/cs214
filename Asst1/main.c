@@ -1,17 +1,12 @@
 #include "mymalloc.h"
 
+typedef struct memory_block {
+	unsigned short int size;
+	//short int allocated;
+	//struct memory_block *next;
+} mem_block;
+
 int main(){
-	int j = foo2(2);
-	int * p = (int*)malloc(10);
-	char * q = (char*)malloc(300);
-	int * r = (int*)malloc(4658);
-	int * s = (int*)malloc(50000);
-		listmem();
-	q = "THIS WORKS";
-	printf("%s\n",q);
-	//int * r = (int*)malloc(5000);
-	//int * r = (int*)malloc(5000);
-	//printf("%p\n",p);
-	//printf("%p\n",q);
+	printf("SIZE: %d\n",sizeof(mem_block));
 	return 0;
 }
