@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NEXT (mem_block*)((char*)ptr+sizeof(mem_block)+(ptr->size & ~1))
-#define NEXT_NEXT (mem_block*)((char*)next+sizeof(mem_block)+(next->size & ~1))
+#define NEXT (mem_block*)((char*)ptr+sizeof(mem_block)+ptr->size)
+#define NEXT_NEXT (mem_block*)((char*)next+sizeof(mem_block)+next->size)
 
 static char total_memory[5000];
 int block_size = 5000;
@@ -11,15 +11,22 @@ int block_size = 5000;
 
 typedef struct memory_block {
 	unsigned short int size;
+	short int allocated;
 } mem_block;
 
 static mem_block *head = (mem_block*) total_memory;
+
+int foo2(int i){
+	i = i*i;
+	return i;
+}
 
 void listmem(){
 	mem_block*  end = (mem_block*)((char*)head + block_size);
 	mem_block* ptr = head;
 	while(ptr < end){
-		printf("SIZE: %d ALLOCATED: %d\n",ptr->size & ~1,ptr->size & 1);
+		printf("SIZE: %d ALLOCATED: %d\n",ptr->size,ptr->allocated);
+		//printf("NEXT: %p\n",ptr->next);
 		ptr = NEXT;
 	}
 	if(end-ptr == 0){
@@ -38,13 +45,14 @@ void *mymalloc(int len, char* file, int line){
 	}
 	static int defined;
 	if(defined == 0){
+		head->allocated = 0;
 		head->size = block_size - sizeof(mem_block);
 		defined = 1;
 	}
 	mem_block* ptr = head;
 	mem_block*  end = (mem_block*)((char*)head + block_size);
 	while(1){
-		if((ptr->size & 1) == 0 && ptr->size>= len){
+		if(ptr->allocated == 0 && ptr->size>= len){
 		break;
 		} else{
 			ptr = NEXT;
@@ -54,7 +62,9 @@ void *mymalloc(int len, char* file, int line){
 			}
 		}
 	}
+	if(len != ptr->size){
 		mem_block *node = (mem_block*)((char*)ptr+sizeof(mem_block)+len);
+		node->allocated = 0;
 		if(NEXT == end){
 			node->size = (int)((char*)head+block_size-(char*)node-sizeof(mem_block));
 		} else{
@@ -66,7 +76,11 @@ void *mymalloc(int len, char* file, int line){
 			return 0;
 		}
 	ptr->size = len;
-	ptr->size = ptr->size + 1;
+	ptr->allocated = 1;
+	if(ptr->allocated & 1){
+		printf("EXTRACTED BIT\n");
+	}
+	}
 	return ptr+1;
 }
 
@@ -77,21 +91,13 @@ void myfree(void *point, char* file, int line){
 	}
 	mem_block * node = point-sizeof(mem_block);
 	mem_block * end = (mem_block*)((char*)head + block_size);
-	mem_block* find = head;
-	int found = 0;
-	while(find < end){
-		if(find == node){
-			found = 1;
-		}
-		find = (mem_block*)((char*)find+sizeof(mem_block)+(find->size & ~1));
-	}
-	if(found == 0){
+	if(node->allocated == 1){
+		node->allocated = 0;
+	} else if(node->allocated != 1 && node->allocated != 0){
 		printf("POINTER NOT A MALLOC ADDRESS\n");
 		return;
 	}
-	if((node->size & 1) == 1){
-		node->size = node->size - 1;
-	} else{
+	else{
 		printf("POINTER ALREADY FREED\n");
 		return;
 	}
@@ -105,27 +111,27 @@ void myfree(void *point, char* file, int line){
 	mem_block *next_next= NEXT_NEXT;
 	if(prev != 0){
 		// prev->alloc = 0 next-alloc = NULL
-		if(NEXT >= end && (prev->size & 1) == 0){
+		if(NEXT >= end && prev->allocated == 0){
 			//printf("Case 1\n");
 			prev->size = (int)((char*)head+block_size-(char*)prev-sizeof(mem_block));
 		// prev->alloc = 0 next-alloc = 1
-		} else if((next->size & 1) != 0 && (prev->size & 1) == 0){
+		} else if(next->allocated != 0 && prev->allocated == 0){
 			//printf("Case 2\n");
 			prev->size = (int)((char*)next - (char*)prev-sizeof(mem_block));
 		// prev->alloc = 1 next-alloc = 0 next->next = null
-		} else if((next->size & 1) == 0 && (prev->size & 1) != 0 && NEXT_NEXT >= end){
+		} else if(next->allocated == 0 && prev->allocated != 0 && NEXT_NEXT >= end){
 			//printf("Case 3\n");
 			ptr->size = (int)((char*)head+block_size-(char*)ptr-sizeof(mem_block));
 		// prev->alloc = 0 next-alloc = 0 next->next = null
-		} else if((next->size & 1) == 0 && (prev->size & 1) == 0 && NEXT_NEXT >= end){ 
+		} else if(next->allocated == 0 && prev->allocated == 0 && NEXT_NEXT >= end){ 
 			//printf("Case 4\n");
 			prev->size = (int)((char*)head+block_size - (char*)prev-sizeof(mem_block));
 		// prev->alloc = 0 next-alloc = 0
-		} else if((next->size & 1) == 0 && (prev->size & 1) == 0){
+		} else if(next->allocated == 0 && prev->allocated == 0){
 			//printf("Case 5\n");
 			prev->size = (int)((char*)NEXT_NEXT - (char*)prev-sizeof(mem_block));
 		// prev-> alloc = 1 next->alloc = 0
-		} else if((next->size & 1) == 0 && (prev->size & 1) != 0){
+		} else if(next->allocated == 0 && prev->allocated != 0){
 			//printf("Case 6\n");
 			ptr->size = (int)((char*)NEXT_NEXT - (char*)ptr-sizeof(mem_block));
 		} else{
@@ -133,11 +139,11 @@ void myfree(void *point, char* file, int line){
 		}
 	} else{
 		// prev->alloc = null next-alloc = 0
-		 if((next->size & 1) == 0 && NEXT_NEXT >= end){
+		 if(next->allocated == 0 && NEXT_NEXT >= end){
 			//printf("Case 7\n");
 			ptr->size = (int)((char*)head+block_size-(char*)ptr-sizeof(mem_block));
 		// prev->alloc = null next-alloc = 0
-		} else if((next->size & 1) == 0){
+		} else if(next->allocated == 0){
 			//printf("Case 8\n");
 			ptr->size = (int)((char*)NEXT_NEXT-(char*)ptr-sizeof(mem_block));
 		} else{
