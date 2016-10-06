@@ -59,10 +59,13 @@ void *mymalloc(int len, char* file, int line){
 		printf("NO ROOM | FILE: %s | LINE: %d\n", file, line);
 		return 0;
 	}
+	if(len == ptr->size){
+		printf("SIZE SAME\n");
+	}
 	if(NEXT == end){
 		node->size = (int)((char*)head+block_size-(char*)node-sizeof(mem_block));
 	} else{
-		node->size = (int)((char*)NEXT - (char*)ptr-len-sizeof(mem_block));
+		node->size = (int)((char*)NEXT - (char*)ptr-len-2*sizeof(mem_block));
 	}
 	ptr->size = len;
 	ptr->size = ptr->size + 1;
