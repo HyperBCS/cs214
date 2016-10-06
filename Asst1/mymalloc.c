@@ -49,7 +49,7 @@ void *mymalloc(int len, char* file, int line){
 		} else{
 			ptr = NEXT;
 			if(ptr > end){
-				printf("NOT ENOUGH SPACE!!\n");
+				printf("NOT ENOUGH SPACE!! | FILE: %s | LINE: %d\n", file, line);
 				return 0;
 			}
 		}
@@ -62,7 +62,7 @@ void *mymalloc(int len, char* file, int line){
 		}
 		if(node->size >0){
 		} else if(node->size < 0){
-			printf("NO ROOM\n");
+			printf("NO ROOM | FILE: %s | LINE: %d\n", file, line);
 			return 0;
 		}
 	ptr->size = len;
@@ -72,7 +72,7 @@ void *mymalloc(int len, char* file, int line){
 
 void myfree(void *point, char* file, int line){
 	if(point == 0){
-		printf("NULL POINTER\n");
+		printf("NULL POINTER | FILE: %s | LINE: %d\n", file, line);
 		return;
 	}
 	mem_block * node = point-sizeof(mem_block);
@@ -86,13 +86,13 @@ void myfree(void *point, char* file, int line){
 		find = (mem_block*)((char*)find+sizeof(mem_block)+(find->size & ~1));
 	}
 	if(found == 0){
-		printf("POINTER NOT A MALLOC ADDRESS\n");
+		printf("POINTER NOT A MALLOC ADDRESS | FILE: %s | LINE: %d\n", file, line);
 		return;
 	}
 	if((node->size & 1) == 1){
 		node->size = node->size - 1;
 	} else{
-		printf("POINTER ALREADY FREED\n");
+		printf("POINTER ALREADY FREED | FILE: %s | LINE: %d\n", file, line);
 		return;
 	}
 	mem_block *prev = 0;
