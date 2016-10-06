@@ -54,19 +54,25 @@ void *mymalloc(int len, char* file, int line){
 			}
 		}
 	}
+
 	mem_block *node = (mem_block*)((char*)ptr+sizeof(mem_block)+len);
 	if(end-node<0){
 		printf("NO ROOM | FILE: %s | LINE: %d\n", file, line);
 		return 0;
 	}
-	if(len == ptr->size){
-		printf("SIZE SAME\n");
-	}
 	if(NEXT == end){
 		node->size = (int)((char*)head+block_size-(char*)node-sizeof(mem_block));
 	} else{
-		node->size = (int)((char*)NEXT - (char*)ptr-len-2*sizeof(mem_block));
+		int size = (int)((char*)NEXT - (char*)ptr-len-sizeof(mem_block));
+		if(size > 0){
+		node->size = (int)((char*)NEXT - (char*)ptr-len-2*sizeof(mem_block));	
+		}
 	}
+	//IF YOU DONT WANT TO INCLUDE 0 SIZE MALLOC UNCOMMENT. OTHERWISE IT WILL ADD TO END OF POINTER.
+	if(node->size == 0){
+		len = len+sizeof(mem_block);
+	}
+
 	ptr->size = len;
 	ptr->size = ptr->size + 1;
 	return ptr+1;
