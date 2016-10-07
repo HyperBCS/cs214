@@ -31,11 +31,12 @@ void listmem(){
 }
 
 void *mymalloc(int len, char* file, int line){
-	if(len == 0){
-		return head;
+	if(len <= 0){
+		return 0;
 	} else if(len % 2 == 1){
 		len = len + 1;
 	}
+
 	static int defined;
 	if(defined == 0){
 		head->size = block_size - sizeof(mem_block);
