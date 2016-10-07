@@ -113,7 +113,6 @@ void myfree(void *point, char* file, int line){
 		ptr = NEXT;
 	}
 	mem_block *next = NEXT;
-	mem_block *next_next= NEXT_NEXT;
 	if(prev != 0){
 		// prev->alloc = 0 next-alloc = NULL
 		if(NEXT >= end && (prev->size & 1) == 0){
