@@ -1,19 +1,22 @@
 #include "mymalloc.h"
 
 int main(){
-int * a = malloc(1000);
-int * b = malloc(1000);
-int * c = malloc(1000);
-int * d = malloc(1000);
-int * e = malloc(990);
-//free(c);
-free(a);
-a = malloc(500);
-free(c);
-free(b);
-free(e);
-free(d);
-free(a);
+int * i[850];
+int j;
+for(j = 0;j < 834;j++){
+	i[j] = (int*)malloc(sizeof(int));
+	//*i[j] = 10;
+}
+for(j = 0;j < 833;j++){
+	*i[j] = 2147483647;
+}
+for(j = 0;j < 833;j++){
+	printf("i[%d]: %d\n",j,*i[j]);
+}
 listmem();
-	return 0;
+for(j = 0;j < 834;j++){
+	free(i[j]);
+}
+listmem();
+return 0;
 }
