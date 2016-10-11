@@ -4,9 +4,10 @@
 
 #define NEXT (mem_block*)((char*)ptr+sizeof(mem_block)+(ptr->size & ~1))
 #define NEXT_NEXT (mem_block*)((char*)next+sizeof(mem_block)+(next->size & ~1))
+#define MAX_SIZE 12000
 
-static char total_memory[5000];
-int block_size = 5000;
+static char total_memory[MAX_SIZE];
+int block_size = MAX_SIZE;
 
 
 typedef struct memory_block {
