@@ -3,7 +3,7 @@
 // Set macro to cleanup code and MAX_SIZE of block
 #define NEXT (mem_block*)((char*)ptr+sizeof(mem_block)+(ptr->size & ~1))
 #define NEXT_NEXT (mem_block*)((char*)next+sizeof(mem_block)+(next->size & ~1))
-#define MAX_SIZE 12000
+#define MAX_SIZE 5000
 
 // Create initial block and set max size
 static char total_memory[MAX_SIZE];
