@@ -53,7 +53,7 @@ void *mymalloc(int len, char* file, int line){
 	// Check if there is any available space in block
 	while(1){
 		if((ptr->size & 1) == 0 && ptr->size>= len){
-		break;
+			break;
 		} else{
 			ptr = NEXT;
 			if(ptr > end){
