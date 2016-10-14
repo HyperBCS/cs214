@@ -118,7 +118,7 @@ void loadD(){
             while(1){
                 pos = rand() % 3000;
                 //printf("POS: %d GRID: %p\n",pos,grid[pos]);
-                if((int)grid[pos] == 0){
+                if(grid[pos] == 0){
                     //printf("FULL pos: %d\n",pos);
                     grid[pos] = malloc(rand() % 5000);
                     if(grid[pos] == 0){
@@ -135,7 +135,7 @@ void loadD(){
             while(1){
                // printf("FREE\n");
                 pos = rand() % 3000;
-                if((int)grid[pos] == 0){
+                if(grid[pos] == 0){
                     continue;
                 } else{
                     short int size = *(short int*)(grid[pos]-2) & 1;
