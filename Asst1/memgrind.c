@@ -163,7 +163,7 @@ int main(){
     }
     gettimeofday(&t1, 0);
     elapsed = (t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec;
-    printf("ELAPSED TIME: %lu\n",elapsed/100);
+    printf("Average time: %luμs\n",elapsed/100);
     listmem();
 
     printf("\n==========WORKLOAD B==========\n");
@@ -173,7 +173,7 @@ int main(){
     }
     gettimeofday(&t1, 0);
     elapsed = (t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec;
-    printf("ELAPSED TIME: %lu\n",elapsed/100);
+    printf("Average time: %luμs\n",elapsed/100);
     listmem();
 
     printf("\n==========WORKLOAD C==========\n");
@@ -183,7 +183,7 @@ int main(){
     }
     gettimeofday(&t1, 0);
     elapsed = (t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec;
-    printf("ELAPSED TIME: %lu\n",elapsed/100);
+    printf("Average time: %luμs\n",elapsed/100);
     listmem();
 
     printf("\n==========WORKLOAD D==========\n");
@@ -193,7 +193,7 @@ int main(){
     }
     gettimeofday(&t1, 0);
     elapsed = (t1.tv_sec-t0.tv_sec)*1000000 + t1.tv_usec-t0.tv_usec;
-    printf("ELAPSED TIME: %lu\n",elapsed/100);
+    printf("Average time: %luμs\n",elapsed/100);
     listmem();
 
     return 0;
