@@ -56,7 +56,7 @@ void loadC(){
             while(1){
                 pos = rand() % 3000;
                 //printf("POS: %d GRID: %p\n",pos,grid[pos]);
-                if((int)grid[pos] == 0){
+                if(grid[pos] == 0){
                     //printf("FULL pos: %d\n",pos);
                     grid[pos] = malloc(rand() % 1000);
                     if(grid[pos] == 0){
