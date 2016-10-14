@@ -246,44 +246,6 @@ void loadF(){
 
 }
 
-void loadE(){
-
-    // --- WORKLOAD E ---
-    char* a[3000];
-    int i = 0;
-    //Incrementing bytes allocated by 1 for each pointer - 3000 times
-    for(i = 0; i < 3000; i++){
-        a[i] = (char*) malloc(i+1);
-    }
-    //Freeing pointers - 3000 times
-    for(i = 0; i < 3000; i++){
-        free(a[i]);
-    }
-
-}
-
-void loadF(){
-
-    // --- WORKLOAD F ---
-    char* a[3000];
-    int i = 0;
-    //Allocating 1 byte pointers - 3000 times
-    for(i = 0; i < 3000; i++){
-        a[i] = (char*) malloc(1);
-    }
-    //Freeing 1 byte pointers in order of first, last repeatedly
-    j = 3000;
-    for(i = 0; i < 3000; i++){
-        if(i == j){
-            break;
-        }
-        free(a[i]);
-        free(a[j]);
-        j--;
-    }
-
-}
-
 int main(){
     struct timeval t0;
     struct timeval t1;
