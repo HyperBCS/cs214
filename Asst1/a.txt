@@ -1,2 +1,0 @@
-c sytax
-pointer, memory management

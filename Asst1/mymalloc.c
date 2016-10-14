@@ -34,7 +34,7 @@ void listmem(){
 }
 
 //Method for acutal mallocing
-void *mymalloc(int len, char* file, int line){
+void *mymalloc(size_t len, char* file, int line){
 	// Error check for size > max_size and of size <= 0
 	if(len <= 0){
 		return 0;
@@ -57,7 +57,7 @@ void *mymalloc(int len, char* file, int line){
 		} else{
 			ptr = NEXT;
 			if(ptr > end){
-				//printf("NOT ENOUGH SPACE!! | FILE: %s | LINE: %d\n", file, line);
+				printf("NOT ENOUGH SPACE!! | FILE: %s | LINE: %d\n", file, line);
 				return 0;
 			}
 		}
@@ -66,7 +66,7 @@ void *mymalloc(int len, char* file, int line){
 	mem_block *node = (mem_block*)((char*)ptr+sizeof(mem_block)+len);
 	// If block is placed after end there is no room and we should quit
 	if(end-node<0){
-		//printf("NO ROOM | FILE: %s | LINE: %d\n", file, line);
+		printf("NO ROOM | FILE: %s | LINE: %d\n", file, line);
 		return 0;
 	}
 	// Here we calculate the size of the next free block 
@@ -95,7 +95,7 @@ void *mymalloc(int len, char* file, int line){
 void myfree(void *point, char* file, int line){
 	// If trying to free null pointer check
 	if(point == 0){
-		//printf("TRIED TO FREE NULL POINTER | FILE: %s | LINE: %d\n", file, line);
+		printf("TRIED TO FREE NULL POINTER | FILE: %s | LINE: %d\n", file, line);
 		return;
 	}
 	// Setup the pointer to correct locations
@@ -111,15 +111,15 @@ void myfree(void *point, char* file, int line){
 		find = (mem_block*)((char*)find+sizeof(mem_block)+(find->size & ~1));
 	}
 	if(found == 0){
-		//printf("POINTER NOT A MALLOC ADDRESS | FILE: %s | LINE: %d\n", file, line);
+		printf("POINTER NOT A MALLOC ADDRESS | FILE: %s | LINE: %d\n", file, line);
 		return;
 	} else if(node->size < 0 || node->size > block_size){
-		//printf("ADDRESS CORRUPT | FILE: %s | LINE: %d\n", file, line);
+		printf("ADDRESS CORRUPT | FILE: %s | LINE: %d\n", file, line);
 	}
 	if((node->size & 1) == 1){
 		node->size = node->size - 1;
 	} else{
-		//printf("POINTER ALREADY FREED | FILE: %s | LINE: %d\n", file, line);
+		printf("POINTER ALREADY FREED | FILE: %s | LINE: %d\n", file, line);
 		return;
 	}
 	// Begin a search through the implicit linked list to find the block just freed, then through a combination of if statements combine surroundin free blocks
