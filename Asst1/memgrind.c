@@ -73,7 +73,7 @@ void loadC(){
             while(1){
                // printf("FREE\n");
                 pos = rand() % 3000;
-                if((int)grid[pos] == 0){
+                if(grid[pos] == 0){
                     free(grid[pos]);
                     continue;
                 } else{
