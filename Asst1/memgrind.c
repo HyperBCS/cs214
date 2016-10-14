@@ -20,6 +20,7 @@ void loadA(){
 }
 
 void loadB(){
+    //Workload B
     int i = 0;
     char* b;
     //Allocating 1 byte pointer then Freeing 1 byte pointer - 3000 times
@@ -56,35 +57,25 @@ void loadC(){
         // If 1 we malloc if 0 we free
         if(choice == 1){
             while(1){
-                pos = rand() % 3000;
-                // Finding a free grid pointer to allocate to keep track
-                if(grid[pos] == 0){
-                    grid[pos] = malloc(rand() % 1000);
-                    if(grid[pos] == 0){
-                        break;
-                    }
-                    mallocd++;
-                    net++;
+                // Allocating 1 byte
+                grid[mallocd] = malloc(1);
+                if(grid[mallocd] == 0){
                     break;
-                } else{
-                    continue;
                 }
+                mallocd++;
+                net++;
+                break;
             }
         } else{
             while(1){
                 // We need to keep track of free's so we use metadata to determine if we successfully freed
-                pos = rand() % 3000;
-                if(grid[pos] == 0){
-                    //free(grid[pos]);
-                    continue;
-                } else{
-                    short int size = *(short int*)(grid[pos]-2) & 1;
-                    if(size == 1){
-                        free(grid[pos]);
-                        free++;
-                        net--;
-                        break;
-                    }
+                pos = rand() % mallocd;
+                short int size = *(short int*)(grid[pos]-2) & 1;
+                if(size == 1){
+                    free(grid[pos]);
+                    free++;
+                    net--;
+                    break;
                 }
             }
         }
@@ -100,54 +91,48 @@ void loadD(){
     int free = 0;
     int choice = 0;
     int pos = 0;
-    // Initialize the pointer array
+    // initialize the pointer array
     char *grid[3000];
+    // Zero out the array because it may not be empty
     for(i = 0;i<3000;i++){
         grid[i] = 0;
     }
     // Work until we malloc and free 3000 times total
     while(mallocd < 3000 || free < 3000){
+        // Choose randomly to free or malloc
         choice = rand() % 2;
-        //If choice is 1 we malloc otherwise we free
         if(net == 0){
             choice = 1;
         } else if(mallocd >= 2999){
             choice = 0;
         }
+        // If 1 we malloc if 0 we free
         if(choice == 1){
             while(1){
-                pos = rand() % 3000;
-                // If the array position is full we need to try again
-                if(grid[pos] == 0){
-                    grid[pos] = malloc(rand() % 5000);
-                    if(grid[pos] == 0){
-                        break;
-                    }
-                    mallocd++;
-                    net++;
+                // Allocating a random amount
+                grid[mallocd] = malloc(rand() % 5000);
+                if(grid[mallocd] == 0){
                     break;
-                } else{
-                    continue;
                 }
+                mallocd++;
+                net++;
+                break;
             }
         } else{
             while(1){
-                // Finding a random position to free
-                pos = rand() % 3000;
-                if(grid[pos] == 0){
-                    continue;
-                } else{
-                    short int size = *(short int*)(grid[pos]-2) & 1;
-                    if(size == 1){
-                        free(grid[pos]);
-                        free++;
-                        net--;
-                        break;
-                    }
+                // We need to keep track of free's so we use metadata to determine if we successfully freed
+                pos = rand() % mallocd;
+                short int size = *(short int*)(grid[pos]-2) & 1;
+                if(size == 1){
+                    free(grid[pos]);
+                    free++;
+                    net--;
+                    break;
                 }
             }
         }
     }
+
 }
 
 // Workload E places an artificial limit with the upper, middle, or lower third allocated. This choice is random
@@ -180,44 +165,35 @@ void loadE(){
     }
     // Work until we malloc and free 3000 times total
     while(mallocd < 3000 || free < 3000){
+        // Choose randomly to free or malloc
         choice = rand() % 2;
         if(net == 0){
             choice = 1;
         } else if(mallocd >= 2999){
             choice = 0;
         }
-        //If choice is 1 we malloc otherwise we free
+        // If 1 we malloc if 0 we free
         if(choice == 1){
             while(1){
-                pos = rand() % 3000;
-                // If the array position is full we need to try again
-                if(grid[pos] == 0){
-                    grid[pos] = malloc(1);
-                    if(grid[pos] == 0){
-                        break;
-                    }
-                    mallocd++;
-                    net++;
+                // Mallocing 1 byte
+                grid[mallocd] = malloc(1);
+                if(grid[mallocd] == 0){
                     break;
-                } else{
-                    continue;
                 }
+                mallocd++;
+                net++;
+                break;
             }
         } else{
             while(1){
-                // Finding a random position to free
-                pos = rand() % 3000;
-                if(grid[pos] == 0){
-                    //free(grid[pos]);
-                    continue;
-                } else{
-                    short int size = *(short int*)(grid[pos]-2) & 1;
-                    if(size == 1){
-                        free(grid[pos]);
-                        free++;
-                        net--;
-                        break;
-                    }
+                // We need to keep track of free's so we use metadata to determine if we successfully freed
+                pos = rand() % mallocd;
+                short int size = *(short int*)(grid[pos]-2) & 1;
+                if(size == 1){
+                    free(grid[pos]);
+                    free++;
+                    net--;
+                    break;
                 }
             }
         }
