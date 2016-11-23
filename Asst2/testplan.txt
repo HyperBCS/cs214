@@ -1,0 +1,47 @@
+Testing my RLE implementation
+To test my implementation I used a piece of code a user posted in piazza which randomly generated a text file with the specified number of chars, in my case I used 10M chars which is a fairly large amount. I then made my own decode method to decompress the files which were made and print to std out. I pipelined the output into a text file and counted the number of characters. The amount of characters always matched the original file.
+
+I also tested my implementation with setting the number of threads to the number of chars. This produces files each of size 1 byte. I also tried to compress a file with 1 byte. These all worked succesfully without error.
+
+Below are error cases that I thought my program should detect.
+
+Test Case: Incorrect number of arguments
+Input: ./compress
+Output: ERROR: Expected 2 arguments (filepath and number of parts)
+Input: ./compress 1 2 3 4
+Output: Output: ERROR: Expected 2 arguments (filepath and number of parts)
+
+Test Case: File not in working path or no read permission.
+Input: ./compress abc.txt 1
+Output: Failed to open file.
+
+Test Case: Empty File
+Input: ./compress out.txt 8
+Output: SIZE: 0
+ERROR: Empty file
+
+Test Case: No write permission for output files
+Input: ./compress mass.txt 1
+Output: SIZE: 460
+ERROR: Failed to write file, please check permissions.
+
+Test Case: More parts than chars
+Input: ./compress out.txt 5
+Output: SIZE: 2
+More threads than chars, lowering thread count to char count
+
+Test Case: Worker binary not found
+Input: ./compress out.txt 1
+Output: SIZE: 2
+ERROR: Worker binary not found in folder. Please compile compressR_worker_LOLS.c to compressR_worker_LOLS.
+
+Test Case: Invalid number of threads eg. <0, or !isalpha
+Input: ./compress out.txt a
+Output: SIZE: 2
+ERROR: Please enter a number greater than 0
+Input: ./compress out.txt 0
+Output: SIZE: 2
+ERROR: Please enter a number greater than 0
+Input: ./compress out.txt -10
+Output: SIZE: 2
+ERROR: Please enter a number greater than 0
