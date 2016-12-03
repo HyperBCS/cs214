@@ -48,14 +48,17 @@ int main(int argc, char ** argv){
 	// After we successfully bind start listening. This is blocking.
 	int status = listen(sockfd, 10);
 	printf("Listening on port %d\n",PORT);
-	// We listen until we accept a connection.
-	int client = accept(sockfd, (struct sockaddr *) &serv_addr, &addrLen);
-	// Information about client
-	inet_ntop(AF_INET, &serv_addr.sin_addr, ipstr, sizeof ipstr);
-	printf("Connection established with %s\n",ipstr);
-	int count = recv(client, recvBuf, 256, 0);
-	printf("Received String: %s\n",recvBuf);
-	close(client);
+		while(1){
+		// We listen until we accept a connection.
+		int client = accept(sockfd, (struct sockaddr *) &serv_addr, &addrLen);
+		// Information about client
+		inet_ntop(AF_INET, &serv_addr.sin_addr, ipstr, sizeof ipstr);
+		printf("Connection established with %s\n",ipstr);
+		int count = recv(client, recvBuf, 256, 0);
+		printf("Received String: %s\n",recvBuf);
+		close(client);
+	}
+
 
 
 }
