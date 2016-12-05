@@ -16,18 +16,55 @@
 extern int errno;
 
 struct sockets {
+	struct sockets * next;
     char * filename;
     int mode;
     int file_mode;
 }arg;
-struct sockets of[10];
+
+// cant make a linked list
+struct sockets of = calloc(1,sizeof(arg));
 
 void error(char *msg){
   perror(msg);
   exit(1);
 }
 
+//mutex lock this
 int conflict(char * filename, int mode, int readtype){
+	int i;
+	int ok;
+	struct * fds = of;
+	struct * possible = 0;
+	for(;fds != 0;fds = fds->next){
+		if(fds->next == 0){
+			possible = fds;
+		}
+		if(strcmp(fds->filename,filename) && mode == 0){
+			ok = 1;
+			break;
+		}
+		if(strcmp(fds->filename,filename) && mode == 1 && readtype == O_RDONLY){
+			ok = 1;
+			break;
+		}
+		if(strcmp(fds->filename,filename) && mode == 1 && fds->file_mode != O_RDONLY && readtype == O_RDONLY){
+			ok = 1;
+			break;
+		}
+		if(strcmp(fds->filename,filename) && mode == 2){
+			return -1;
+		}
+	}
+	if(ok){
+		possible->next = calloc(1,sizeof(arg));
+		possible = possible->next;
+		possible->filename = filename;
+		possible->mode = mode;
+		possible->file_mode = readtype;
+		return possible
+	}
+	return -1;
 	
 }
 
@@ -37,8 +74,11 @@ int netopen(int client){
 	int mode;
 	int error;
 	int i;
+	// receive connection mode (exclusive, transaction, etc)
 	int count_mode = recv(client, &mode, sizeof(int), 0);
+	// receive flags(read only,write,wr)
 	int count_flags = recv(client, &flagBuf, sizeof(int), 0);
+	//path name
 	int count_f = recv(client, recvBuf, 256, 0);
 	//check for modes
 	conflict(recvBuf,mode,flagBuf);
