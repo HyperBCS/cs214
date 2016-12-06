@@ -102,11 +102,20 @@ int netopen(int client){
 	int * bad;
 	int o;
 	// receive connection mode (exclusive, transaction, etc)
-	int count_mode = recv(client, &mode, sizeof(int), 0);
+	int count_mode = 0;
+	while(count_mode < sizeof(int)){
+		count_mode += recv(client, &mode, sizeof(int), 0);
+	}
 	// receive flags(read only,write,wr)
-	int count_flags = recv(client, &flagBuf, sizeof(int), 0);
+	int count_flags = 0;
+	while(count_flags < sizeof(int)){
+		count_flags += recv(client, &flagBuf, sizeof(int), 0);
+	}
 	//path name
-	int count_f = recv(client, recvBuf, 256, 0);
+	int count_f = 0;
+	while(count_f < 256){
+	count_f += recv(client, recvBuf, 256, 0);
+	}
 	//check for modes
 	o = open(recvBuf,flagBuf);
 	if(o != -1){
@@ -140,16 +149,21 @@ int netread(int client){
 	int o;
 	int re;
 	// receive file descriptor
-	int count_fdes = recv(client, &filedes, sizeof(int), 0);
+	int count_fdes = 0;
+	while(count_fdes < sizeof(int)){
+		count_fdes += recv(client, &filedes, sizeof(int), 0);
+	}
 	// receive # of bytes to read
-	int count_nbyte = recv(client, &nbytes, sizeof(ssize_t), 0);
+	int count_nbyte = 0;
+	while(count_nbyte < sizeof(ssize_t)){
+		count_nbyte += recv(client, &nbytes, sizeof(ssize_t), 0);
+	}
 	//printf("FD: %d\nNBYTE: %zd\n",filedes,nbytes);
 	readBuf = calloc(1,nbytes);
 	if(filedes % 10 == 0){
 		filedes /= -10;
 		re = read(filedes,readBuf,nbytes);
-		printf("RE: %d\n",re);
-		printf("Write Size: %zd\n",nbytes);
+		printf("Read Bytes: %d\n",re);
 	} else{
 		re = -1;
 	}
@@ -176,21 +190,23 @@ int netread(int client){
 void * begin(void * c){
 	int client = *(int*)c;
 	int t;
-	int type = recv(client, &t, sizeof(t), 0);
-	printf("Request type: %d\n",t);
-	switch(t){
-		case 1:
-			netopen(client);
-			break;
-		case 2:
-			netread(client);
-			break;
-		case 3:
-			break;
-		case 4:
-			break;
+	int type = 0;
+	while(type < sizeof(t)){
+		type += recv(client, &t, sizeof(t), 0);
 	}
-	close(client);
+		printf("Request type: %d\n",t);
+		switch(t){
+			case 1:
+				netopen(client);
+				break;
+			case 2:
+				netread(client);
+				break;
+			case 3:
+				break;
+			case 4:
+				break;
+		}
 	free(c);
 	return 0;
 }

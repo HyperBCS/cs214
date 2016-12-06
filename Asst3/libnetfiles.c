@@ -16,6 +16,9 @@ struct sockaddr_in serv_addr;
 
 extern int errno;
 int mode = -1;
+int sockfd;
+socklen_t addrLen;
+char ip[100];
 
 void error(char *msg){
   perror(msg);
@@ -36,6 +39,14 @@ int netserverinit(char * hostname, int filemode){
 	bcopy((char *)server->h_addr, 
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
+	// // init server addr and client addr
+	// sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	// if(sockfd < 0){
+	// 	printf("ERROR: Could not open socket, please check connection!\n");
+	// 	exit(0);
+	// }
+	// addrLen = sizeof(serv_addr);
+	// inet_ntop(AF_INET, &serv_addr.sin_addr, ip, sizeof ip);
 	return 0;
 }
 
@@ -46,8 +57,6 @@ int netopen(const char * pathname,int flags){
 	if(mode == -1){
 		return -1;
 	}
-	int sockfd;
-	char ip[100];
 	char filename[256];
 	int error;
 	int err;
@@ -59,9 +68,8 @@ int netopen(const char * pathname,int flags){
 		printf("ERROR: Could not open socket, please check connection!\n");
 		exit(0);
 	}
-	socklen_t addrLen = sizeof(serv_addr);
+	addrLen = sizeof(serv_addr);
 	inet_ntop(AF_INET, &serv_addr.sin_addr, ip, sizeof ip);
-	printf("Connecting to %s\n",ip);
 	int status = connect(sockfd, (struct sockaddr *) &serv_addr, addrLen);
 	if(status < 0){
 		printf("Could not connect to server.\n");
@@ -75,13 +83,19 @@ int netopen(const char * pathname,int flags){
 	int count_flags = send(sockfd, &flags, sizeof(flags), 0);
 	// send path
 	int countF = send(sockfd, filename, 256, 0);
-	int retnB = recv(sockfd, &error, sizeof(error), 0);
-	int retnE = recv(sockfd, &err, sizeof(err), 0);
+	int retnB = 0;
+	while(retnB < sizeof(error)){
+		retnB += recv(sockfd, &error, sizeof(error), 0);
+	}
+	int retnE = 0;
+	while(retnE < sizeof(err)){
+		retnE += recv(sockfd, &err, sizeof(err), 0);
+	}
 	if(error == -1){
 		errno = err;
 		printf("[%d] %s\n",error,strerror(errno));
 	}
-	close(sockfd);
+	//close(sockfd);
 	return error;
 }
 
@@ -90,8 +104,6 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	if(fildes >=0){
 		return -1;
 	}
-	int sockfd;
-	char ip[100];
 	int err;
 	int t = 2;
 	// init server addr and client addr
@@ -100,9 +112,8 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		printf("ERROR: Could not open socket, please check connection!\n");
 		exit(0);
 	}
-	socklen_t addrLen = sizeof(serv_addr);
+	addrLen = sizeof(serv_addr);
 	inet_ntop(AF_INET, &serv_addr.sin_addr, ip, sizeof ip);
-	printf("Connecting to %s\n",ip);
 	int status = connect(sockfd, (struct sockaddr *) &serv_addr, addrLen);
 	if(status < 0){
 		printf("Could not connect to server.\n");
@@ -115,9 +126,13 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	//send nbytes
 	int count_nbyte = send(sockfd, &nbyte, sizeof(nbyte), 0);
 	//receive error first
-	int retnE = recv(sockfd, &err, sizeof(err), 0);
+	int retnE = 0;
+	while(retnE < sizeof(err)){
+		retnE += recv(sockfd, &err, sizeof(err), 0);
+	}
 	if(retnE != sizeof(int)){
 		printf("Could not receive error!\n");
+		return -1;
 	}
 	if(err != 0){
 		errno = err;
@@ -134,7 +149,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		retnB += tmp;
 		printf("Received: %d/%zd\n",retnB,nbyte);
 	}
-	close(sockfd);
+	//close(sockfd);
 	return err;
 }
 
@@ -146,21 +161,23 @@ int main(int argc, char ** argv){
 	// char * hostname = argv[1];
 	char * hostname = "localhost";
 	netserverinit(hostname,1);
-	char * filename = "f.txt";
+	char * filename = "song.flac";
 	int fdd = netopen(filename,O_RDONLY);
-	 //FILE * file = fopen(filename, "r");
-	 //fseek(file, 0L, SEEK_END);
-	 //int size = ftell(file);
-	// printf("SIZE: %d\n",size);
-	// //printf("FD: %d\n",fdd);
+	 FILE * file = fopen(filename, "r");
+	 fseek(file, 0L, SEEK_END);
+	 int size = ftell(file);
+	printf("SIZE: %d\n",size);
+	//printf("FD: %d\n",fdd);
+	sleep(1);
+	 char * txt = calloc(1,size);
+	netread(fdd,txt,size);
 	// sleep(1);
-	 char * txt = calloc(1,100);
-	netread(fdd,txt,1000000);
-	// char * file_n = "music2.mp3";
- //    FILE * fp = fopen (file_n, "w+");
- //    fwrite(txt, sizeof(char), size, fp);
-    //fclose(fp);
-  //  fclose(file);
+	// netread(fdd,txt,size);
+	char * file_n = "music2.flac";
+    FILE * fp = fopen (file_n, "w+");
+    fwrite(txt, sizeof(char), size, fp);
+    fclose(fp);
+   fclose(file);
 }
 
 
