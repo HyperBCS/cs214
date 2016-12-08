@@ -7,16 +7,19 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
 
 extern int errno;
 
+int is_regular_file(const char *path)
+{
+    struct stat path_stat;
+    stat(path, &path_stat);
+    return S_ISREG(path_stat.st_mode);
+}
+
 int main(){
-	char * h = calloc(1,12);
-	int fd = open("test.txt",0);
-	int a = read(fd,h,6);
-	int b = read(fd,h,12);
-	printf("A: %d\nB: %d\n",a,b);
-	printf("%s\n",strerror(errno));
+	printf("%d %d %d\n",O_RDONLY,O_WRONLY,O_RDWR);
 }

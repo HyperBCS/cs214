@@ -1,0 +1,4 @@
+#define INVALID_FILE_MODE 69
+#define UNRESTRICTED 0
+#define EXCLUSIVE 1
+#define TRANSACTION 2 
