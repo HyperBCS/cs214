@@ -184,139 +184,141 @@ int netopen(int client){
 	return o;
 }
 
-// int getclients(int port){
-// 	int sockfd;
-// 	char ipstr[INET6_ADDRSTRLEN];
-// 	// init server addr and client addr
-// 	struct sockaddr_in serv_addr;
-// 	// Attempt to create socket
-// 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-// 	// If socket creation fails exit
-// 	if(sockfd < 0){
-// 		printf("ERROR: Could not open socket, please check connection!\n");
-// 		return -1;
-// 	}
-// 	// Assign socket_addr varibles
-// 	serv_addr.sin_family = AF_INET;
-// 	serv_addr.sin_port = htons(port);
-// 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-// 	socklen_t addrLen = sizeof(serv_addr);
-// 	// Attempt to bind to the socket.
-// 	int bind_s = bind(sockfd, (struct sockaddr *) &serv_addr, addrLen);
-// 	if(bind_s == -1){
-// 		printf("Could not bind to socket. Please check open connections.\n");
-// 		return -1;
-// 	}
-// 	int status = listen(sockfd, MAX_CLIENTS);
-// 	printf("Listening\n");
-// 		// We listen until we accept a connection.
-// 		int client = accept(sockfd, (struct sockaddr *) &serv_addr, &addrLen);
-// 		int * c = (int*)calloc(1,sizeof(int));
-// 		*c = client;
-// 		// Information about client
-// 		inet_ntop(AF_INET, &serv_addr.sin_addr, ipstr, sizeof ipstr);
-// 		printf("Connection established with %s\n",ipstr);
-// 	return client;
-// }
+int getclients(int port){
+	int sockfd;
+	char ipstr[INET6_ADDRSTRLEN];
+	// init server addr and client addr
+	struct sockaddr_in serv_addr;
+	// Attempt to create socket
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	// If socket creation fails exit
+	if(sockfd < 0){
+		printf("ERROR: Could not open socket, please check connection!\n");
+		return -1;
+	}
+	// Assign socket_addr varibles
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(port);
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	socklen_t addrLen = sizeof(serv_addr);
+	// Attempt to bind to the socket.
+	int bind_s = bind(sockfd, (struct sockaddr *) &serv_addr, addrLen);
+	if(bind_s == -1){
+		printf("Could not bind to socket. Please check open connections.\n");
+		return -1;
+	}
+	int status = listen(sockfd, MAX_CLIENTS);
+	printf("Listening\n");
+		// We listen until we accept a connection.
+		int client = accept(sockfd, (struct sockaddr *) &serv_addr, &addrLen);
+		int * c = (int*)calloc(1,sizeof(int));
+		*c = client;
+		// Information about client
+		inet_ntop(AF_INET, &serv_addr.sin_addr, ipstr, sizeof ipstr);
+		printf("Connection established with %s\n",ipstr);
+	return client;
+}
 
-// void * mread(void * s){
-// 	struct sockets * socket = (struct sockets *)s;
-// 	int filedes = socket->fd;
-// 	int client = socket->clientSock;
-// 	int nbytes = socket->nbytes;
-// 	char * readBuf = socket->buf;
-// 	int error;
-// 	int re;
-// 	if(filedes % 10 == 0){
-// 		filedes /= -10;
-// 		re = read(filedes,readBuf,nbytes);
-// 		printf("Read Bytes: %d\n",re);
-// 	} else{
-// 		re = -1;
-// 	}
-// 	if(re == -1){
-// 		error = errno;
-// 		if(error == 0){
-// 			error = -1;
-// 		}
-// 	} else{
-// 		error = 0;
-// 	}
-// 	// send error
-// 	int retnE = send(client, &error, sizeof(error), 0);
-// 	if(re == -1){
-// 		free(readBuf);
-// 		return 0;
-// 	}
-// 	// send bytes read
-// 	int readB = send(client, &re, sizeof(re),0);
-// 	// send data
-// 	int retnB = send(client, readBuf, nbytes, 0);
-// 	printf("Sent: %d\n",retnB);
-// 	free(readBuf);
-// 	return 0;
-// }
+void * mread(void * s){
+	struct sockets * socket = (struct sockets *)s;
+	int filedes = socket->fd;
+	int client = socket->clientSock;
+	int nbytes = socket->nbytes;
+	char * readBuf = socket->buf;
+	int error;
+	int re;
+	if(filedes % 10 == 0){
+		filedes /= -10;
+		re = read(filedes,readBuf,nbytes);
+		printf("Read Bytes: %d\n",re);
+	} else{
+		re = -1;
+	}
+	if(re == -1){
+		error = errno;
+		if(error == 0){
+			error = -1;
+		}
+	} else{
+		error = 0;
+	}
+	// send error
+	int retnE = send(client, &error, sizeof(error), 0);
+	if(re == -1){
+		free(readBuf);
+		return 0;
+	}
+	// send bytes read
+	int readB = send(client, &re, sizeof(re),0);
+	// send data
+	int retnB = send(client, readBuf, nbytes, 0);
+	printf("Sent: %d\n",retnB);
+	free(readBuf);
+	return 0;
+}
 
-// void mnetread(int client,int filedes,ssize_t nbytes){
-// 	int i;
-// 	int canbind;
-// 	int ports[2];
-// 	int clients[2];
-// 	char * buff1;
-// 	char * buff2;
-// 	//mutex
-// 	for(i = 0;i < 10;i++){
-// 		if(canbind == 2){
-// 			break;
-// 		}
-// 		if(socks[i].client == 0){
-// 			socks[i].client = client;
-// 			socks[i].part = canbind;
-// 			socks[i].fd = filedes;
-// 			canbind++;
-// 			ports[canbind] = socks[i].port;
-// 		}
-// 	}
-// 	if(canbind == 0){
-// 		printf("CANNOT BIND ANY MORE SOCKETS!\n");
-// 		return;
-// 	}
-// 	if(nbytes % 2 == 1 && canbind ==2){
-// 		buff1 = calloc(1,(nbytes / 2)+1);
-// 		buff2 = calloc(1,nbytes / 2);
-// 		read(filedes,buff1,(nbytes / 2)+1);
-// 		read(filedes,buff2,nbytes / 2);
-// 		socks[0].buf = buff1;
-// 		socks[1].buf = buff2;
-// 	} else if(nbytes % 2 == 0 && canbind ==2){
-// 		buff1 = calloc(1,nbytes / 2);
-// 		buff2 = calloc(1,nbytes / 2);
-// 		read(filedes,buff1,nbytes / 2);
-// 		read(filedes,buff2,nbytes / 2);
-// 		socks[0].buf = buff1;
-// 		socks[1].buf = buff2;
-// 	} else if(canbind == 1){
-// 		buff1 = calloc(1,nbytes);
-// 		read(filedes,buff1,nbytes / 2);
-// 		socks[0].buf = buff1;
-// 	}
-// 	for(i = canbind;i>0;i--){
-// 		clients[i] = getclients(ports[i]);
-// 		if(clients[i] == -1){
-// 			printf("COULD NOT BIND MULTI SOCKET\n");
-// 			return;
-// 		}
-// 	}
-// 	pthread_t tid[2];
-// 	if(canbind == 1){
-// 		pthread_create(&tid[0], NULL, mread, (void*)&socks[0]);
-// 		pthread_join(tid[1],0);
-// 	} else if(canbind == 2){
-// 		pthread_create(&tid[0], NULL, mread, (void*)&socks[0]);
-// 		pthread_create(&tid[1], NULL, mread, (void*)&socks[1]);
-// 		pthread_join(tid[1],0);
-// 	}
-// }
+void mnetread(int client,int filedes,ssize_t nbytes){
+	int i;
+	int canbind;
+	int ports[2];
+	int clients[2];
+	char * buff1;
+	char * buff2;
+	//mutex
+	for(i = 0;i < 10;i++){
+		if(canbind == 2){
+			break;
+		}
+		if(socks[i].client == 0){
+			socks[i].client = client;
+			socks[i].part = canbind;
+			socks[i].fd = filedes;
+			canbind++;
+			ports[canbind] = socks[i].port;
+		}
+	}
+	if(canbind == 0){
+		printf("CANNOT BIND ANY MORE SOCKETS!\n");
+		return;
+	}
+	if(nbytes % 2 == 1 && canbind ==2){
+		buff1 = calloc(1,(nbytes / 2)+1);
+		buff2 = calloc(1,nbytes / 2);
+		read(filedes,buff1,(nbytes / 2)+1);
+		read(filedes,buff2,nbytes / 2);
+		socks[0].buf = buff1;
+		socks[1].buf = buff2;
+	} else if(nbytes % 2 == 0 && canbind ==2){
+		buff1 = calloc(1,nbytes / 2);
+		buff2 = calloc(1,nbytes / 2);
+		read(filedes,buff1,nbytes / 2);
+		read(filedes,buff2,nbytes / 2);
+		socks[0].buf = buff1;
+		socks[1].buf = buff2;
+	} else if(canbind == 1){
+		buff1 = calloc(1,nbytes);
+		read(filedes,buff1,nbytes / 2);
+		socks[0].buf = buff1;
+	}
+	for(i = canbind;i>0;i--){
+		clients[i] = getclients(ports[i]);
+		if(clients[i] == -1){
+			printf("COULD NOT BIND MULTI SOCKET\n");
+			return;
+		}
+	}
+	// send ports to client
+	int sendP = send(client, &ports, sizeof(ports),0);
+	pthread_t tid[2];
+	if(canbind == 1){
+		pthread_create(&tid[0], NULL, mread, (void*)&socks[0]);
+		pthread_join(tid[1],0);
+	} else if(canbind == 2){
+		pthread_create(&tid[0], NULL, mread, (void*)&socks[0]);
+		pthread_create(&tid[1], NULL, mread, (void*)&socks[1]);
+		pthread_join(tid[1],0);
+	}
+}
 
 int netread(int client){
 	char * readBuf;
@@ -341,12 +343,12 @@ int netread(int client){
 			continue;
 		}
 	}
-	// // This is cancer
-	// // if large bytes thread method
-	// if(nbytes > 2048){
-	// 	mnetread(client, filedes,nbytes);
-	// 	return 0;
-	// }
+	// This is cancer
+	// if large bytes thread method
+	if(nbytes > 2048){
+		mnetread(client, filedes,nbytes);
+		return 0;
+	}
 	readBuf = calloc(1,nbytes);
 	if(filedes % 10 == 0){
 		filedes /= -10;
