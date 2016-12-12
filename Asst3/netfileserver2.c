@@ -24,6 +24,8 @@ extern int h_errno;
 pthread_mutex_t lock;
 pthread_mutex_t queuetex;
 pthread_mutex_t socktex;
+pthread_mutex_t conf;
+pthread_mutex_t conf2;
 
 struct fdl {
 	struct fdl * next;
@@ -284,32 +286,37 @@ int netopen(int client){
 	//check for modes
 	if(!is_regular_file(recvBuf)){
 		errno = 0;
+		pthread_mutex_lock(&conf);
 		bad = conflict(recvBuf,mode,flagBuf, client,0);
+		pthread_mutex_unlock(&conf);
 		if(errno != 0){
 			error = errno;
 			printf("[%d] %s\n",errno,strerror(errno));
 			o = -1;
 		}
 		if(bad > 0){
-			int pp = 0;
-			printf("Conflict\n");
-			printf("PIPE: %d\n",bad);
-			read(bad,&pp,sizeof(pp));
-			if(pp == -1){
-				printf("TIMEOUT\n");
-				o = -1;
-				errno = EWOULDBLOCK;
-				send(client, &o, sizeof(o), 0);
-				send(client, &errno, sizeof(errno), 0);
-				return errno;
-			}
-			printf("PP: %d\n",pp);
-			bad = conflict(recvBuf,mode,flagBuf, client,0);
-			if(bad > 0){
-				error= EACCES;
-				o = -1;
-			} else{
-				o = bad;
+			while(1){
+				int pp = 0;
+				printf("Conflict\n");
+				printf("PIPE: %d\n",bad);
+				read(bad,&pp,sizeof(pp));
+				if(pp == -1){
+					printf("TIMEOUT\n");
+					o = -1;
+					errno = EWOULDBLOCK;
+					send(client, &o, sizeof(o), 0);
+					send(client, &errno, sizeof(errno), 0);
+					return errno;
+				}
+				printf("PP: %d\n",pp);
+				pthread_mutex_lock(&conf2);
+				bad = conflict(recvBuf,mode,flagBuf, client,0);
+				printf("BAD %d\n",bad);
+				pthread_mutex_unlock(&conf2);
+				if(bad <= 0){
+					o = bad;
+					break;
+				}
 			}
 			// permision denied fix
 		} else{
@@ -598,7 +605,7 @@ void mnetwrite(int client,int filedes,ssize_t nbytes){
 	pthread_mutex_lock(&socktex);
 	for(i = 0;i < MAX_SOCKETS;i++){
 		if(canbind == 2){
-			pthread_mutex_unlock(&queuetex);
+			pthread_mutex_unlock(&socktex);
 			break;
 		}
 		if(socks[i].clientSock == 0){
@@ -611,7 +618,7 @@ void mnetwrite(int client,int filedes,ssize_t nbytes){
 			printf("PORT %d\n",socks[i].port);
 		}
 	}
-	pthread_mutex_unlock(&queuetex);
+	pthread_mutex_unlock(&socktex);
 	if(canbind == 0){
 		printf("CANNOT BIND ANY MORE SOCKETS!\n");
 		return;
@@ -829,23 +836,31 @@ int netclose(int client){
 			error = -1;
 		}
 	} else{
-		//mutex??
+		pthread_mutex_lock(&queuetex);
 		struct fileQ * ff = findFile(filename);
 		struct clientQ * cc = ff->queue;
+		struct clientQ * ccP = ff->queue;
 		if(cc == 0){
 			printf("NO QUEUE\n");
-			error = 0;
-		} else{
-			error = 0;
-			int conf = conflict(filename,cc->mode,cc->readtype,0,1);
-			if(conf == 0){
+		}
+		for(;cc != NULL;cc = cc->next){
+			pthread_mutex_lock(&conf);
+			int confl = conflict(filename,cc->mode,cc->readtype,0,1);
+			pthread_mutex_unlock(&conf);
+			if(confl == 0){
 				filedes = (cc->filedes)[1];
 				printf("WRITING TO %d\n",filedes);
-				write(filedes,&conf,sizeof(conf));
-				ff->queue = cc->next;
+				write(filedes,&confl,sizeof(confl));
+				if(ff->queue == cc){
+					ff->queue = cc->next;
+				} else{
+					ccP->next = cc->next;
+				}
 				free(cc);
 			}
+			ccP = cc;
 		}
+		pthread_mutex_unlock(&queuetex);
 	}
 	listfiles();
 	// send error
@@ -887,6 +902,7 @@ void * begin(void * c){
 //mutex
 void * bigBrother(){
 	while(1){
+		pthread_mutex_lock(&queuetex);
 		int death = -1;
 		struct fileQ * ff = fQ;
 		if(ff != 0){
@@ -917,6 +933,7 @@ void * bigBrother(){
 				}
 			}
 		}
+		pthread_mutex_unlock(&queuetex);
 		sleep(3);
 	}
 	return 0;
