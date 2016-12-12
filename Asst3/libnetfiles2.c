@@ -269,10 +269,6 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 				printf("PORT: %d\n",ports[i]);
 				readSock[i].port = ports[i];
 				count++;
-			} else{
-				errno = ports[i]*-1;
-				printf("[%d] %s\n",errno,strerror(errno));
-				return -1;
 			}
 		}
 	char * buffs[2];
@@ -463,10 +459,6 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 				printf("PORT: %d\n",ports[i]);
 				readSock[i].port = ports[i];
 				count++;
-			} else{
-				errno = ports[i]*-1;
-				printf("[%d] %s\n",errno,strerror(errno));
-				return -1;
 			}
 		}
 	char * buffer = (char*)buf;

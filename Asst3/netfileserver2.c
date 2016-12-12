@@ -17,6 +17,7 @@
 
 #define PORT 25565
 #define MAX_CLIENTS 10
+#define MAX_SOCKETS 1
 
 extern int errno;
 extern int h_errno;
@@ -251,7 +252,6 @@ int netopen(int client){
 	int flagBuf;
 	int mode;
 	int error;
-	int omode;
 	int i;
 	int bad;
 	int o;
@@ -378,7 +378,7 @@ void * mread(void * s){
 	}
 	int nbytes = socket->nbytes;
 	char * readBuf = socket->buf;
-	int error;
+	int error = 0;
 	int re = socket->read;
 	// send error
 	int retnE = send(client, &error, sizeof(error), 0);
@@ -404,7 +404,7 @@ void mnetread(int client,int filedes,ssize_t nbytes){
 	char * buff1;
 	char * buff2;
 	//mutex
-	for(i = 0;i < 10;i++){
+	for(i = 0;i < MAX_SOCKETS;i++){
 		if(canbind == 2){
 			break;
 		}
@@ -444,11 +444,12 @@ void mnetread(int client,int filedes,ssize_t nbytes){
 		socker[1]->nbytes = nbytes / 2;
 	} else if(canbind == 1){
 		buff1 = calloc(1,nbytes);
-		socker[0]->read = read(filedes,buff1,nbytes / 2);
+		socker[0]->read = read(filedes,buff1,nbytes);
 		socker[0]->buf = buff1;
 		socker[0]->nbytes = nbytes;
 	}
 	if(errno != 0){
+		printf("[%d] %s\n",errno,strerror(errno));
 		free(buff1);
 		free(buff2);
 		pthread_mutex_lock(&socktex);
@@ -575,7 +576,7 @@ void * mwrite(void * s){
 		int tmp = 0;
 		tmp = recv(client, buf, nbytes, 0);
 		if(tmp == 0 && buffBytes < nbytes){
-			break;;
+			break;
 		}
 		buffBytes += tmp;
 		buf += tmp;
@@ -595,7 +596,7 @@ void mnetwrite(int client,int filedes,ssize_t nbytes){
 	char * buff1;
 	char * buff2;
 	pthread_mutex_lock(&socktex);
-	for(i = 0;i < 10;i++){
+	for(i = 0;i < MAX_SOCKETS;i++){
 		if(canbind == 2){
 			pthread_mutex_unlock(&queuetex);
 			break;
@@ -653,7 +654,7 @@ void mnetwrite(int client,int filedes,ssize_t nbytes){
 	pthread_t tid[2];
 	if(canbind == 1){
 		pthread_create(&tid[0], NULL, mwrite, (void*)socker[0]);
-		pthread_join(tid[1],0);
+		pthread_join(tid[0],0);
 	} else if(canbind == 2){
 		pthread_create(&tid[0], NULL, mwrite, (void*)socker[0]);
 		pthread_create(&tid[1], NULL, mwrite, (void*)socker[1]);
@@ -955,7 +956,7 @@ int main(int argc, char ** argv){
 	// lets setup the socket array
 	int i = 0;
 	int pp = PORT + 1;
-	for(i = 0;i < 10;i++){
+	for(i = 0;i < MAX_SOCKETS;i++){
 		socks[i].port = pp;
 		socks[i].client = getclients(&socks[i],pp);
 		socks[i].clientSock = 0;
