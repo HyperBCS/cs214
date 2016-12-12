@@ -7,7 +7,9 @@
 #include <signal.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <netdb.h>
+#include <time.h>
 #include <errno.h>
 #include "libnetfiles.h"
 #include <fcntl.h>
@@ -15,6 +17,13 @@
 #define PORT 25565
 
 struct sockaddr_in serv_addr;
+
+struct readM {
+	int port;
+	int read;
+	ssize_t nbytes;
+	char * buf;
+} readerM;
 
 extern int errno;
 extern int h_errno;
@@ -37,6 +46,7 @@ int netserverinit(char * hostname, int filemode){
 	serv_addr.sin_port = htons(PORT);
 	// remember to set errno
 	if(gethostbyname(hostname) == NULL){
+		h_errno = HOST_NOT_FOUND;
 		printf("HOST NOT FOUND\n");
 		mode = -1;
 		return -1;
@@ -46,34 +56,21 @@ int netserverinit(char * hostname, int filemode){
 	bcopy((char *)server->h_addr, 
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
-	// // init server addr and client addr
-	// sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	// if(sockfd < 0){
-	// 	printf("ERROR: Could not open socket, please check connection!\n");
-	// 	exit(0);
-	// }
-	// addrLen = sizeof(serv_addr);
-	// inet_ntop(AF_INET, &serv_addr.sin_addr, ip, sizeof ip);
 	return 0;
 }
 
-int makeSock(int client, int port){
+int makeSock(int port){
+	struct sockaddr_in serv_addr2;
 	socklen_t addrLen2;
 	serv_addr2.sin_family = AF_INET;
-	serv_addr2.sin_port = htons(PORT);
+	serv_addr2.sin_port = htons(port);
 	// remember to set errno
-	if(gethostbyname(hostname) == NULL){
-		printf("HOST NOT FOUND\n");
-		mode = -1;
-		return -1;
-	}
 	struct hostent *server;
-	server = gethostbyname(hostname);
-	bcopy((char *)server->h_addr2, 
+	server = gethostbyname(hname);
+	bcopy((char *)server->h_addr, 
          (char *)&serv_addr2.sin_addr.s_addr,
          server->h_length);
-	int * sockf = calloc(1,sizeof(int));
-	sockf = socket(AF_INET, SOCK_STREAM, 0);
+	int sockf = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockf < 0){
 		printf("[%d] %s\n",errno,strerror(errno));
 		exit(0);
@@ -152,6 +149,68 @@ int netopen(const char * pathname,int flags){
 	return error;
 }
 
+void * multiread(void * st){
+	struct readM * str = (struct readM *) st;
+	int port = str->port;
+	int client = makeSock(port);
+	int nbyte = str->nbytes;
+	char * buf = str->buf;
+	int err;
+	int recvM;
+
+	//receive error first
+	int retnE = 0;
+	while(retnE < sizeof(err)){
+		retnE += recv(client, &err, sizeof(err), 0);
+		if(retnE == 0){
+			errno = ECONNRESET;
+			close(sockfd);
+			return 0;
+		}
+	}
+	if(retnE != sizeof(int)){
+		printf("Could not receive error!\n");
+		return 0;
+	}
+	if(err != 0){
+		errno = err;
+		printf("[%d] %s\n",err,strerror(errno));
+		close(client);
+		return 0;
+	}
+	// received byte number
+	int recvB = 0;
+	while(recvB < sizeof(recvB)){
+		recvB += recv(client, &recvM, sizeof(recvM), 0);
+		if(recvB == 0){
+			errno = ECONNRESET;
+			close(client);
+			return 0;
+		}
+	}
+	str->read = recvM;
+	int retnB = 0;
+	errno = 0;
+	while(retnB < nbyte){
+		char c;
+		int tmp;
+		tmp = recv(client, buf, nbyte, 0);
+		if(tmp == 0 && retnB < nbyte){
+			errno = ECONNRESET;
+			close(client);
+			return 0;
+		}
+		buf += tmp;
+		retnB += tmp;
+	}
+	printf("Received: %d/%zd\n",retnB,nbyte);
+	if(err == -1){
+		recvB = -1;
+	}
+	close(client);
+	return 0;
+}
+
 ssize_t netread(int fildes, void *buf, size_t nbyte){
 	signal(SIGPIPE, SIG_IGN);
 	// remember to set errno
@@ -161,11 +220,13 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	}
 	// remember to set errno
 	if(fildes >=0){
+		errno = ENOENT;
 		return -1;
 	}
 	int err;
 	int recvM;
 	int ports[2];
+	struct readM readSock[2];
 	int newsock[2];
 	int t = 2;
 	// init server addr and client addr
@@ -189,12 +250,12 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	int count_nbyte = send(sockfd, &nbyte, sizeof(nbyte), 0);
 	//receive ports first if size > 2048
 	int recvP = 0;
+	int tmp = 0;
 	if(nbyte > 2048){
 		while(recvP < sizeof(ports)){
-			int tmp;
-			tmp = recv(sockfd, &ports+recvP, sizeof(ports), 0);
+			tmp = recv(sockfd, &ports+tmp, sizeof(ports), 0);
 			recvP += tmp;
-			if(retnE == 0){
+			if(recvP == 0){
 				errno = ECONNRESET;
 				close(sockfd);
 				return -1;
@@ -202,13 +263,57 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		}
 		int i = 0;
 		pthread_t tid[2];
+		int count = 0;
 		for(i = 0;i < 2;i++){
-			if(port[i] != 0){
-				newsock[i] = makeSock(port[i]);
-				pthread_create(&tid[i], NULL, begin, NULL);
+			if(ports[i] != 0 && ports[i]> 0){
+				printf("PORT: %d\n",ports[i]);
+				readSock[i].port = ports[i];
+				count++;
+			} else{
+				errno = ports[i]*-1;
+				printf("[%d] %s\n",errno,strerror(errno));
+				return -1;
 			}
 		}
-
+	char * buffs[2];
+	if(nbyte % 2 == 1 && count ==2){
+		buffs[0] = calloc(1,(nbyte / 2)+1);
+		buffs[1] = calloc(1,nbyte / 2);
+		readSock[0].buf = buffs[0];
+		readSock[1].buf = buffs[1];
+		readSock[0].nbytes = (nbyte / 2)+1;
+		readSock[1].nbytes = nbyte / 2;
+	} else if(nbyte % 2 == 0 && count ==2){
+		buffs[0] = calloc(1,nbyte / 2);
+		buffs[1] = calloc(1,nbyte / 2);
+		readSock[0].nbytes = nbyte / 2;
+		readSock[1].nbytes = nbyte / 2;
+		readSock[0].buf = buffs[0];
+		readSock[1].buf = buffs[1];
+	} else if(count == 1){
+		buffs[0] = calloc(1,nbyte);
+		readSock[0].nbytes = nbyte;
+		readSock[0].buf = buffs[0];
+	}
+		// make sock
+		for(i = 0;i < count;i++){
+				pthread_create(&tid[i], NULL, multiread, (void*)&readSock[i]);
+		}
+		for(i = 0;i<count;i++){
+			if(tid[i] != 0){
+				pthread_join(tid[i],0);
+			}
+		}
+		int read = 0;
+		char * tmpbuf = buf;
+		for(i = 0;i<count;i++){
+			if(tid[i] != 0){
+				read += readSock[i].read;
+				memcpy(tmpbuf,buffs[i],readSock[i].nbytes);
+				tmpbuf += readSock[i].nbytes;
+			}
+		}
+		return read;
 	}
 	//receive error first
 	int retnE = 0;
@@ -240,7 +345,6 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 			return -1;
 		}
 	}
-	printf("ERR: %d\n",err);
 	int retnB = 0;
 	errno = 0;
 	while(retnB < nbyte){
@@ -257,10 +361,47 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		printf("Received: %d/%zd\n",retnB,nbyte);
 	}
 	if(err == -1){
-		recvB = -1;
+		recvM = -1;
 	}
 	close(sockfd);
-	return recvB;
+	return recvM;
+}
+
+void * multiwrite(void * st){
+	struct readM * str = (struct readM *) st;
+	int port = str->port;
+	int client = makeSock(port);
+	int nbyte = str->nbytes;
+	char * buf = str->buf;
+	int err;
+	int recvM;
+	// send data
+	int sent_data = send(client, buf, nbyte, 0);
+	if(errno == SIGPIPE){
+		errno = ECONNRESET;
+	}
+	//receive error first
+	int retnE = 0;
+	while(retnE < sizeof(err)){
+		retnE += recv(client, &err, sizeof(err), 0);
+		if(retnE == 0){
+			errno = ECONNRESET;
+			close(client);
+			return 0;
+		}
+	}
+	if(retnE != sizeof(int)){
+		printf("Could not receive error!\n");
+		return 0;
+	}
+	if(err != 0){
+		errno = err;
+		printf("[%d] %s\n",err,strerror(errno));
+		close(client);
+		return 0;
+	}
+	close(client);
+	return 0;
 }
 
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
@@ -272,10 +413,16 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	}
 	// remember to set errno
 	if(fildes >=0){
+		errno = ENOENT;
 		return -1;
 	}
 	int err;
 	int recvM;
+	int recvP;
+	int tmp = 0;
+	int ports[2];
+	struct readM readSock[2];
+	int newsock[2];
 	int t = 3;
 	// init server addr and client addr
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -296,6 +443,81 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	int count_fdes = send(sockfd, &fildes, sizeof(fildes), 0);
 	//send nbytes
 	int count_nbyte = send(sockfd, &nbyte, sizeof(nbyte), 0);
+
+	if(nbyte > 2048){
+		//receive ports
+		while(recvP < sizeof(ports)){
+			tmp = recv(sockfd, &ports+tmp, sizeof(ports), 0);
+			recvP += tmp;
+			if(recvP == 0){
+				errno = ECONNRESET;
+				close(sockfd);
+				return -1;
+			}
+		}
+		int i = 0;
+		pthread_t tid[2];
+		int count = 0;
+		for(i = 0;i < 2;i++){
+			if(ports[i] != 0 && ports[i]> 0){
+				printf("PORT: %d\n",ports[i]);
+				readSock[i].port = ports[i];
+				count++;
+			} else{
+				errno = ports[i]*-1;
+				printf("[%d] %s\n",errno,strerror(errno));
+				return -1;
+			}
+		}
+	char * buffer = (char*)buf;
+	char * buffs[2];
+	if(nbyte % 2 == 1 && count ==2){
+		buffs[0] = buffer;
+		buffs[1] = buffer + (nbyte / 2)+1;
+		readSock[0].buf = buffs[0];
+		readSock[1].buf = buffs[1];
+		readSock[0].nbytes = (nbyte / 2)+1;
+		readSock[1].nbytes = nbyte / 2;
+	} else if(nbyte % 2 == 0 && count ==2){
+		buffs[0] = buffer;
+		buffs[1] = buffer + (nbyte / 2);
+		readSock[0].nbytes = nbyte / 2;
+		readSock[1].nbytes = nbyte / 2;
+		readSock[0].buf = buffs[0];
+		readSock[1].buf = buffs[1];
+	} else if(count == 1){
+		buffs[0] = buffer;
+		readSock[0].nbytes = nbyte;
+		readSock[0].buf = buffs[0];
+	}
+		// make sock
+		for(i = 0;i < count;i++){
+				pthread_create(&tid[i], NULL, multiwrite, (void*)&readSock[i]);
+		}
+		for(i = 0;i<count;i++){
+			if(tid[i] != 0){
+				pthread_join(tid[i],0);
+			}
+		}
+		//receive bytes written
+		int recvB = 0;
+		while(recvB < sizeof(recvB)){
+			recvB += recv(sockfd, &recvM, sizeof(recvM), 0);
+			if(recvB == 0){
+				errno = ECONNRESET;
+				close(sockfd);
+				return -1;
+			}
+		}
+		if(recvM < 0){
+			errno = -1*recvM;
+			printf("[%d] %s\n",errno,strerror(errno));
+			return -1;
+		}
+		return recvM;
+	}
+
+
 	// send data
 	int sent_data = send(sockfd, buf, nbyte, 0);
 	if(errno == SIGPIPE){
@@ -331,7 +553,6 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 			return -1;
 		}
 	}
-	printf("ERR: %d\n",err);
 	if(err == -1){
 		recvB = -1;
 	}
@@ -346,6 +567,7 @@ int netclose(int fildes){
 	}
 	// remember to set errno
 	if(fildes >=0){
+		errno = ENOENT;
 		return -1;
 	}
 	int err;
@@ -381,30 +603,5 @@ int netclose(int fildes){
 		errno = err;
 		err = -1;
 	}
-	printf("ERR: %d\n",err);
 	return err;
-}
-
-int main(int argc, char ** argv){
-	// if(argc != 3){
-	// 	printf("Incorrect arguments\n");
-	// 	exit(1);
-	// }
-	// char * hostname = argv[1];
-	char * hostname = "localhost";
-	netserverinit(hostname,1);
-	char * filename = "song.mp3";
-	char * filename2 = "song2.mp3";
-	int fdd = netopen(filename,O_RDONLY);
-	int fdd2 = netopen(filename2,O_RDWR);
-	 FILE * file = fopen(filename, "r");
-	 fseek(file, 0L, SEEK_END);
-	 int size = ftell(file);
-	printf("SIZE: %d\n",size);
-	//printf("FD: %d\n",fdd);
-	sleep(1);
-	 char * txt = calloc(1,size);
-	netread(fdd,txt,size);
-	netwrite(fdd2,txt,size);
-   fclose(file);
 }
