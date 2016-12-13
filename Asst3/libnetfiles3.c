@@ -196,9 +196,14 @@ void * multiread(void * st){
 	while(retnB < nbyte){
 		char c;
 		int tmp;
+		errno = 0;
 		tmp = recv(client, buf, nbyte, 0);
 		if(tmp == 0 && retnB < nbyte){
 			str->error = ECONNRESET;
+			close(client);
+			return 0;
+		} else if(tmp == -1){
+			str->error = errno;
 			close(client);
 			return 0;
 		}
@@ -221,7 +226,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		return -1;
 	}
 	// remember to set errno
-	if(fildes >=0 || fildes % 10 != 0){
+	if(fildes >=0 || fildes % 10 != 0 || buf == 0){
 		errno = EBADF;
 		return -1;
 	}
@@ -304,6 +309,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 			if(tid[i] != 0){
 				if(readSock[i].error != 0){
 					errno = readSock[i].error;
+					return -1;
 				}
 				read += readSock[i].read;
 				memcpy(tmpbuf,readSock[i].buf,readSock[i].nbytes);
@@ -347,9 +353,13 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	while(retnB < nbyte){
 		char c;
 		int tmp;
+		errno = 0;
 		tmp = recv(sockfd, buf, nbyte, 0);
 		if(tmp == 0 && retnB < nbyte){
 			errno = ECONNRESET;
+			close(sockfd);
+			return -1;
+		} else if(tmp == -1){
 			close(sockfd);
 			return -1;
 		}
@@ -416,7 +426,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 		return -1;
 	}
 	// remember to set errno
-	if(fildes >=0 || fildes % 10 != 0){
+	if(fildes >=0 || fildes % 10 != 0 || buf == 0){
 		errno = EBADF;
 		return -1;
 	}
@@ -522,9 +532,12 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 
 
 	// send data
+	errno = 0;
 	int sent_data = send(sockfd, buf, nbyte, 0);
 	if(errno == SIGPIPE){
 		errno = ECONNRESET;
+	} else if(sent_data == -1){
+		return -1;
 	}
 	//receive error first
 	int retnE = 0;

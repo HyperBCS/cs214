@@ -199,6 +199,11 @@ int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 	fds = possible;
 	if(rdMode == 0){
 		if((mode1 == 0) || (mode1 == 1 && write1 == 1 && readtype == O_RDONLY) || (mode1 == 1 && write1 == 0) || fds == 0){
+			errno = 0;
+			int ff = open(filename,readtype) * -10;
+			if(errno != 0 || ff == -1){
+				return -1;
+			}
 			if(fds == 0){
 				of = calloc(1,sizeof(arg));
 				possible = of;
@@ -210,7 +215,7 @@ int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 			possible->mode = mode;
 			possible->file_mode = readtype;
 			pthread_mutex_unlock(&lock);
-			possible->fd = open(filename,readtype) * -10;
+			possible->fd = ff;
 			return possible->fd;
 		} else{
 			fd = queueFile(ff,client,mode,readtype);
@@ -235,7 +240,7 @@ void listfiles(){
 	struct fdl * fds = of;
 	printf("-------FILES-------\n");
 	for(;fds != NULL;fds = fds->next){
-		printf("FILE: %s\nMODE: %d\nFD: %d\nFILE MODE: %d\n\n",fds->filename,fds->mode,fds->fd,fds->file_mode);
+		printf("FILE: %s\nTRANSFER MODE: %d\nFD: %d\nFILE MODE: %d\n\n",fds->filename,fds->mode,fds->fd,fds->file_mode);
 	}
 	printf("-------------------\n");
 }
@@ -301,7 +306,7 @@ int netopen(int client){
 			printf("[%d] %s\n",errno,strerror(errno));
 			o = -1;
 		}
-		if(bad > 0){
+		if(bad > 0 && errno == 0){
 			while(1){
 				int pp = 0;
 				printf("Conflict\n");
@@ -575,11 +580,11 @@ void * mwrite(void * s){
 	while(buffBytes < nbytes){
 		int tmp = 0;
 		tmp = recv(client, buf, nbytes, 0);
+		buffBytes += tmp;
+		buf += tmp;
 		if(tmp == 0 && buffBytes < nbytes){
 			break;
 		}
-		buffBytes += tmp;
-		buf += tmp;
 	}
 	// send error
 	int retnE = send(client, &errno, sizeof(errno), 0);
@@ -722,11 +727,11 @@ int netwrite(int client){
 	while(buffBytes < nbytes){
 		int tmp = 0;
 		tmp = recv(client, buf, nbytes, 0);
-		if(tmp == 0){
-			continue;
-		}
 		buffBytes += tmp;
 		buf += tmp;
+		if(tmp == 0 && buffBytes < nbytes){
+			return 0;
+		}
 	}
 	if(filedes % 10 == 0){
 		filedes /= -10;
