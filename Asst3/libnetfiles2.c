@@ -21,6 +21,7 @@ struct sockaddr_in serv_addr;
 struct readM {
 	int port;
 	int read;
+	int error;
 	ssize_t nbytes;
 	char * buf;
 } readerM;
@@ -163,7 +164,7 @@ void * multiread(void * st){
 	while(retnE < sizeof(err)){
 		retnE += recv(client, &err, sizeof(err), 0);
 		if(retnE == 0){
-			errno = ECONNRESET;
+			str->error = ECONNRESET;
 			close(sockfd);
 			return 0;
 		}
@@ -196,7 +197,7 @@ void * multiread(void * st){
 		int tmp;
 		tmp = recv(client, buf, nbyte, 0);
 		if(tmp == 0 && retnB < nbyte){
-			errno = ECONNRESET;
+			str->error = ECONNRESET;
 			close(client);
 			return 0;
 		}
@@ -219,13 +220,14 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		return -1;
 	}
 	// remember to set errno
-	if(fildes >=0){
-		errno = ENOENT;
+	if(fildes >=0 || fildes % 10 != 0){
+		errno = EBADF;
 		return -1;
 	}
 	int err;
 	int recvM;
 	int ports[2];
+	char * buffs[2];
 	struct readM readSock[2];
 	int newsock[2];
 	int t = 2;
@@ -275,10 +277,11 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 				return -1;
 			}
 		}
-	char * buffs[2];
 	if(nbyte % 2 == 1 && count ==2){
 		buffs[0] = calloc(1,(nbyte / 2)+1);
 		buffs[1] = calloc(1,nbyte / 2);
+		readSock[0].error = 0;
+		readSock[1].error = 0;
 		readSock[0].buf = buffs[0];
 		readSock[1].buf = buffs[1];
 		readSock[0].nbytes = (nbyte / 2)+1;
@@ -286,12 +289,15 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	} else if(nbyte % 2 == 0 && count ==2){
 		buffs[0] = calloc(1,nbyte / 2);
 		buffs[1] = calloc(1,nbyte / 2);
+		readSock[0].error = 0;
+		readSock[1].error = 0;
 		readSock[0].nbytes = nbyte / 2;
 		readSock[1].nbytes = nbyte / 2;
 		readSock[0].buf = buffs[0];
 		readSock[1].buf = buffs[1];
 	} else if(count == 1){
 		buffs[0] = calloc(1,nbyte);
+		readSock[1].error = 0;
 		readSock[0].nbytes = nbyte;
 		readSock[0].buf = buffs[0];
 	}
@@ -308,6 +314,9 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 		char * tmpbuf = buf;
 		for(i = 0;i<count;i++){
 			if(tid[i] != 0){
+				if(readSock[i].error != 0){
+					errno = readSock[i].error;
+				}
 				read += readSock[i].read;
 				memcpy(tmpbuf,buffs[i],readSock[i].nbytes);
 				tmpbuf += readSock[i].nbytes;
@@ -376,9 +385,16 @@ void * multiwrite(void * st){
 	int err;
 	int recvM;
 	// send data
+	errno = 0;
 	int sent_data = send(client, buf, nbyte, 0);
-	if(errno == SIGPIPE){
-		errno = ECONNRESET;
+	if(errno == SIGPIPE || errno != 0){
+		if(errno == SIGPIPE){
+			str->error = ECONNRESET;
+			return 0;
+		} else{
+			str->error = errno;
+			return 0;
+		}
 	}
 	//receive error first
 	int retnE = 0;
@@ -412,8 +428,8 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 		return -1;
 	}
 	// remember to set errno
-	if(fildes >=0){
-		errno = ENOENT;
+	if(fildes >=0 || fildes % 10 != 0){
+		errno = EBADF;
 		return -1;
 	}
 	int err;
@@ -460,7 +476,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 		int count = 0;
 		for(i = 0;i < 2;i++){
 			if(ports[i]> 0){
-				printf("PORT: %d\n",ports[i]);
+				printf("Port: %d\n",ports[i]);
 				readSock[i].port = ports[i];
 				count++;
 			}else if (ports[i] < 0){
@@ -474,6 +490,8 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	if(nbyte % 2 == 1 && count ==2){
 		buffs[0] = buffer;
 		buffs[1] = buffer + (nbyte / 2)+1;
+		readSock[0].error = 0;
+		readSock[1].error = 0;
 		readSock[0].buf = buffs[0];
 		readSock[1].buf = buffs[1];
 		readSock[0].nbytes = (nbyte / 2)+1;
@@ -481,12 +499,15 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	} else if(nbyte % 2 == 0 && count ==2){
 		buffs[0] = buffer;
 		buffs[1] = buffer + (nbyte / 2);
+		readSock[0].error = 0;
+		readSock[1].error = 0;
 		readSock[0].nbytes = nbyte / 2;
 		readSock[1].nbytes = nbyte / 2;
 		readSock[0].buf = buffs[0];
 		readSock[1].buf = buffs[1];
 	} else if(count == 1){
 		buffs[0] = buffer;
+		readSock[0].error = 0;
 		readSock[0].nbytes = nbyte;
 		readSock[0].buf = buffs[0];
 	}
@@ -497,6 +518,12 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 		for(i = 0;i<count;i++){
 			if(tid[i] != 0){
 				pthread_join(tid[i],0);
+			}
+		}
+		for(i = 0;i < count;i++){
+			if(readSock[i].error != 0){
+				errno = readSock[i].error;
+				return -1;
 			}
 		}
 		//receive bytes written
@@ -554,10 +581,10 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 		}
 	}
 	if(err == -1){
-		recvB = -1;
+		recvM = -1;
 	}
 	close(sockfd);
-	return recvB;
+	return recvM;
 }
 
 int netclose(int fildes){
@@ -566,11 +593,11 @@ int netclose(int fildes){
 		return -1;
 	}
 	// remember to set errno
-	if(fildes >=0){
-		errno = ENOENT;
+	if(fildes >=0 || fildes % 10 != 0){
+		errno = EBADF;
 		return -1;
 	}
-	int err;
+	int err = 0;
 	int recvM;
 	int t = 4;
 	// init server addr and client addr

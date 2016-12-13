@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <fcntl.h>
-#include "libnetfiles2.c"
+#include "libnetfiles3.c"
 
 int main(void)
 {
@@ -16,24 +16,19 @@ int main(void)
   // char * hostname = argv[1];
   char * hostname = "localhost";
   netserverinit(hostname,1);
-  // char * filename = "pic.png";
-  // char * filename2 = "pic2.png";
-  // int fdd = netopen(filename,O_RDONLY);
-  //  int fdd2 = netopen(filename2,O_RDWR);
-  //  FILE * file = fopen(filename, "r");
-  //  fseek(file, 0L, SEEK_END);
-  //  int size = ftell(file);
-  // printf("SIZE: %d\n",size);
-  // //printf("FD: %d\n",fdd);
-  //  char * txt = calloc(1,size);
+  char * filename = "song.mp3";
+  char * filename2 = "song2.mp3";
+  int fdd = netopen(filename,O_RDONLY);
+   int fdd2 = netopen(filename2,O_RDWR);
+   FILE * file = fopen(filename, "r");
+   fseek(file, 0L, SEEK_END);
+   int size = ftell(file);
+  printf("SIZE: %d\n",size);
+  //printf("FD: %d\n",fdd);
+   char * txt = calloc(1,size);
+  printf("Read: %zd\n",netread(fdd,txt,size));
   // printf("Read: %zd\n",netread(fdd,txt,size));
-  // // printf("Read: %zd\n",netread(fdd,txt,size));
-  // printf("Write: %zd\n",netwrite(fdd2,txt,size));
-  //  //fclose(file);
+  printf("Write: %zd\n",netwrite(fdd2,txt,size));
+   fclose(file);
   // // int fdd2 = netopen(filename2,O_RDWR);
-  char * filename = "pic.png";
-  int fdd = netopen(filename,O_RDWR);
-  printf("FD\n");
-  sleep(8);
-  netclose(fdd);
 }
