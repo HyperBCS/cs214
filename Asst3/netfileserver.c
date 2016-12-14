@@ -694,6 +694,7 @@ void mnetwrite(int client,int filedes,size_t nbytes){
 	int written = 0;
 	for(i = 0;i < canbind;i++){
 		re = write(filedes, socker[i]->buf,socker[i]->nbytes);
+		free(socker[i]->buf);
 		if(re == -1){
 			re = -1*errno;
 			written = re;

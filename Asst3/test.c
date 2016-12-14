@@ -10,8 +10,8 @@ int main(void)
   // char * hostname = argv[1];
   char * hostname = "localhost";
   netserverinit(hostname,1);
-  char * filename = "song.mp3";
-  char * filename2 = "song2.mp3";
+  char * filename = "anime.mkv";
+  char * filename2 = "anime2.mkv";
   int fdd = netopen(filename,O_RDWR);
   int fdd2 = netopen(filename2,O_RDWR);
    FILE * file = fopen(filename, "r");
@@ -25,6 +25,7 @@ int main(void)
    printf("[%d] %s\n",errno,strerror(errno));
   int fcc =  netclose(fdd);
    printf("Netclose %d\n[%d] %s\n",fcc,errno,strerror(errno));
+   free(txt);
   // int fdd2 = netopen(filename2,O_RDWR);
   // int fdd = netopen(filename,O_RDWR);
   // int fdd = netopen(filename,O_RDONLY);

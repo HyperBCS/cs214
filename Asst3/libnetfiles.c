@@ -22,11 +22,6 @@ socklen_t addrLen;
 char ip[100];
 char * hname;
 
-void error(char *msg){
-  perror(msg);
-  exit(1);
-}
-
 int netserverinit(char * hostname, int filemode){
 	if(filemode < 0 || filemode > 2){
 		h_errno = INVALID_FILE_MODE;
@@ -319,6 +314,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 				}
 				read += readSock[i].read;
 				memcpy(tmpbuf,readSock[i].buf,readSock[i].nbytes);
+				free(readSock[i].buf);
 				tmpbuf += readSock[i].nbytes;
 			}
 		}
@@ -375,6 +371,7 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	if(err == -1){
 		recvM = -1;
 	}
+	free(buf);
 	close(sockfd);
 	return recvM;
 }
