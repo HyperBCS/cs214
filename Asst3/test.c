@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <fcntl.h>
-#include "libnetfiles3.c"
+#include "libnetfiles.h"
 // make header file with all include and function definition
 
 int main(void)
@@ -19,9 +12,8 @@ int main(void)
   netserverinit(hostname,1);
   char * filename = "song.mp3";
   char * filename2 = "song2.mp3";
-  int fdd = netopen(filename,O_WRONLY);
-  int fdd2 = netopen(filename2,O_RDONLY);
-  printf("[%d] %s\n",fdd,strerror(errno));
+  int fdd = netopen(filename,O_RDWR);
+  int fdd2 = netopen(filename2,O_RDWR);
    FILE * file = fopen(filename, "r");
    fseek(file, 0L, SEEK_END);
    int size = ftell(file);
@@ -31,7 +23,14 @@ int main(void)
    printf("Read: %zd\n",netread(fdd,txt,size));
    printf("Write: %zd\n",netwrite(fdd2,txt,size));
    printf("[%d] %s\n",errno,strerror(errno));
-  // int fcc =  netclose(fdd);
-  //  printf("Netclose %d\n[%d] %s\n",fcc,errno,strerror(errno));
-  // // int fdd2 = netopen(filename2,O_RDWR);
+  int fcc =  netclose(fdd);
+   printf("Netclose %d\n[%d] %s\n",fcc,errno,strerror(errno));
+  // int fdd2 = netopen(filename2,O_RDWR);
+  // int fdd = netopen(filename,O_RDWR);
+  // int fdd = netopen(filename,O_RDONLY);
+  // printf("[%d] %s\n",fdd,strerror(errno));
+  // sleep(8);
+  // int cc = netclose(fdd);
+  // printf("[%d] %s\n",cc,strerror(errno));
+
 }
