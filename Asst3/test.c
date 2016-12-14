@@ -10,8 +10,8 @@ int main(void)
   // char * hostname = argv[1];
   char * hostname = "localhost";
   netserverinit(hostname,1);
-  char * filename = "anime.mkv";
-  char * filename2 = "anime2.mkv";
+  char * filename = "song.mp3";
+  char * filename2 = "song2.mp3";
   int fdd = netopen(filename,O_RDWR);
   int fdd2 = netopen(filename2,O_RDWR);
    FILE * file = fopen(filename, "r");

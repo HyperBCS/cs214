@@ -32,6 +32,7 @@ pthread_mutex_t conf2;
 struct fdl {
 	struct fdl * next;
     char * filename;
+    int inode;
     int mode;
     int fd;
     int file_mode;
@@ -48,6 +49,7 @@ struct clientQ{
 
 struct fileQ{
 	char * filename;
+	int inode;
 	struct fileQ * next;
 	struct clientQ * queue;
 
@@ -79,13 +81,13 @@ void error(char *msg){
   exit(1);
 }
 
-struct fileQ * findFile(char * filename){
+struct fileQ * findFile(char * filename, int inode){
 	struct fileQ * ff = fQ;
 	struct fileQ * prev = ff;
 	int i;
 	pthread_mutex_lock(&queuetex);
 	for(i = 0;ff != 0;ff = ff->next){
-		if(!strcmp(ff->filename,filename)){
+		if(ff->inode == inode){
 			pthread_mutex_unlock(&queuetex);
 			return ff;
 		}
@@ -94,6 +96,7 @@ struct fileQ * findFile(char * filename){
 	prev->next = calloc(1,sizeof(files));
 	prev = prev->next;
 	prev->filename = filename;
+	prev->inode = inode;
 	pthread_mutex_unlock(&queuetex);
 	return prev;
 }
@@ -142,10 +145,13 @@ int queueFile(struct fileQ * ff, int client, int mode, int readtype){
 
 //mutex lock this
 int conflict(char * filename, int mode, int readtype, int client, int rdMode){
-	int mode0;
+	int mode0 = 0;
+	struct stat file_stat; 
 	struct fdl * fds = of;
 	struct fdl * possible = 0;
 	struct fileQ * ff = 0;
+	stat (filename, &file_stat);  
+	int inode = file_stat.st_ino;
 	int mode1 = 0;
 	int fd = 0;
 	int write1 = 0;
@@ -154,29 +160,30 @@ int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 		printf("Adding file to list\n");
 		fQ = calloc(1,sizeof(files));
 		fQ->filename = filename;
+		fQ->inode = inode;
 	}
-	ff = findFile(filename);
+	ff = findFile(filename,inode);
 
 	for(;fds != 0;fds = fds->next){
 		if(fds->next == 0){
 			possible = fds;
 		}
-		if(!strcmp(fds->filename,filename) && fds->mode == 0){
+		if(fds->inode == inode && fds->mode == 0){
 			write1 = 1;
 			mode0 = 1;
 			continue;
 		}
-		if(!strcmp(fds->filename,filename) && fds->mode == 1 && fds->file_mode == O_RDONLY){
+		if(fds->inode == inode && fds->mode == 1 && fds->file_mode == O_RDONLY){
 			mode1 = 1;
 			continue;
 		}
-		if(!strcmp(fds->filename,filename) && fds->mode == 1 && fds->file_mode != O_RDONLY){
+		if(fds->inode == inode && fds->mode == 1 && fds->file_mode != O_RDONLY){
 			write1 = 1;
 			mode1 = 1;
 			continue;
 		}
 
-		if(!strcmp(fds->filename,filename) && fds->mode == 2){
+		if(fds->inode == inode && fds->mode == 2){
 			if(rdMode == 0){
 				fd = queueFile(ff,client,mode,readtype);
 				pthread_mutex_unlock(&lock);
@@ -212,6 +219,7 @@ int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 				possible = possible->next;
 			}
 			possible->filename = filename;
+			possible->inode = inode;
 			possible->mode = mode;
 			possible->file_mode = readtype;
 			pthread_mutex_unlock(&lock);
@@ -869,7 +877,10 @@ int netclose(int client){
 			error = -1;
 		}
 	} else{
-		struct fileQ * ff = findFile(filename);
+		struct stat file_stat; 
+		stat (filename, &file_stat);  
+		int inode = file_stat.st_ino;
+		struct fileQ * ff = findFile(filename, inode);
 		pthread_mutex_lock(&queuetex);
 		struct clientQ * cc = ff->queue;
 		struct clientQ * ccP = ff->queue;
