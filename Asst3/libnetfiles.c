@@ -22,6 +22,7 @@ socklen_t addrLen;
 char ip[100];
 char * hname;
 
+//Determines if the host exists, the flag is valid. Sets global variables.
 int netserverinit(char * hostname, int filemode){
 	if(filemode < 0 || filemode > 2){
 		h_errno = INVALID_FILE_MODE;
@@ -47,6 +48,7 @@ int netserverinit(char * hostname, int filemode){
 	return 0;
 }
 
+// Makes a socket connection for a function.
 int makeSock(int port){
 	struct sockaddr_in serv_addr2;
 	serv_addr2.sin_family = AF_INET;
@@ -74,7 +76,7 @@ int makeSock(int port){
 }
 
 
-
+// Attempts to open file from server.
 int netopen(const char * pathname,int flags){
 	if(flags < 0 || flags > 2){
 		h_errno = INVALID_FILE_MODE;
@@ -144,6 +146,7 @@ int netopen(const char * pathname,int flags){
 	return error;
 }
 
+// NEt read helper method
 void * multiread(void * st){
 	struct readM * str = (struct readM *) st;
 	int port = str->port;
@@ -210,6 +213,7 @@ void * multiread(void * st){
 	return 0;
 }
 
+//net read attemps to read bytes from remote host
 ssize_t netread(int fildes, void *buf, size_t nbyte){
 	signal(SIGPIPE, SIG_IGN);
 	// remember to set errno
@@ -371,11 +375,11 @@ ssize_t netread(int fildes, void *buf, size_t nbyte){
 	if(err == -1){
 		recvM = -1;
 	}
-	free(buf);
 	close(sockfd);
 	return recvM;
 }
 
+// netwrite helper method.
 void * multiwrite(void * st){
 	struct readM * str = (struct readM *) st;
 	int port = str->port;
@@ -424,6 +428,7 @@ void * multiwrite(void * st){
 	return 0;
 }
 
+//netwrite attemps to write bytes to remote host
 ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	signal(SIGPIPE, SIG_IGN);
 
@@ -591,6 +596,7 @@ ssize_t netwrite(int fildes, const void *buf, size_t nbyte){
 	return recvM;
 }
 
+//attemps to close file on remote host.
 int netclose(int fildes){
 	if(mode == -1){
 		h_errno = HOST_NOT_FOUND;

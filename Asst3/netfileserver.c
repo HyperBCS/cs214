@@ -75,18 +75,12 @@ struct sockets socks[10];
 struct fdl * of;
 struct fileQ * fQ;
 
-
-void error(char *msg){
-  perror(msg);
-  exit(1);
-}
-
+// Given an inode find the node which contains this. If not found add file to end.
 struct fileQ * findFile(char * filename, int inode){
 	struct fileQ * ff = fQ;
 	struct fileQ * prev = ff;
-	int i;
 	pthread_mutex_lock(&queuetex);
-	for(i = 0;ff != 0;ff = ff->next){
+	for(;ff != 0;ff = ff->next){
 		if(ff->inode == inode){
 			pthread_mutex_unlock(&queuetex);
 			return ff;
@@ -101,6 +95,7 @@ struct fileQ * findFile(char * filename, int inode){
 	return prev;
 }
 
+// Here we queue a file to be opened.
 int queueFile(struct fileQ * ff, int client, int mode, int readtype){
 	printf("QUEUEING\n");
 	pthread_mutex_lock(&queuetex);
@@ -122,8 +117,7 @@ int queueFile(struct fileQ * ff, int client, int mode, int readtype){
 		pthread_mutex_unlock(&queuetex);
 		return fd;
 	}
-	int i = 0;
-	for(i = 0;cc != 0;cc = cc->next){
+	for(;cc != 0;cc = cc->next){
 		prev = cc;
 	}
 	prev->next = calloc(1,sizeof(cQ));
@@ -143,7 +137,7 @@ int queueFile(struct fileQ * ff, int client, int mode, int readtype){
 
 
 
-//mutex lock this
+//extension A. Used to check transfer mode conflicts, and update queue/linked list
 int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 	int mode0 = 0;
 	struct stat file_stat; 
@@ -244,6 +238,7 @@ int conflict(char * filename, int mode, int readtype, int client, int rdMode){
 	
 }
 
+// used as a debug to list open files.
 void listfiles(){
 	struct fdl * fds = of;
 	printf("-------FILES-------\n");
@@ -253,6 +248,7 @@ void listfiles(){
 	printf("-------------------\n");
 }
 
+// check if the file exists and is able to be opened.
 int is_regular_file(const char *path){
     struct stat path_stat;
     int err;
@@ -269,6 +265,7 @@ int is_regular_file(const char *path){
     }
 }
 
+//attemps to open a file.
 int netopen(int client){
 	char * recvBuf = calloc(1,256);
 	int flagBuf;
@@ -360,6 +357,7 @@ int netopen(int client){
 	return o;
 }
 
+// this will get a socket for a thread to use for Ext B
 int getclients(struct sockets * s, int port){
 	int sockfd;
 	// init server addr and client addr
@@ -387,6 +385,7 @@ int getclients(struct sockets * s, int port){
 	return sockfd;
 }
 
+// worker thread for ext B
 void * mread(void * s){
 	struct sockets * socket = (struct sockets *)s;
 	int sockfd = socket->client;
@@ -438,6 +437,7 @@ void * mread(void * s){
 	return 0;
 }
 
+// helper method for reading
 void mnetread(int client,int filedes,size_t nbytes){
 	int i = 0;
 	int canbind = 0;
@@ -514,6 +514,7 @@ void mnetread(int client,int filedes,size_t nbytes){
 	return;
 }
 
+// function for reading.
 int netread(int client){
 	char * readBuf;
 	int filedes;
@@ -584,6 +585,7 @@ int netread(int client){
 	return 0;
 }
 
+// Worker helper method :)
 void * mwrite(void * s){
 	struct sockets * socket = (struct sockets *)s;
 	int sockfd = socket->client;
@@ -629,6 +631,7 @@ void * mwrite(void * s){
 	return 0;
 }
 
+// Helper method for writing over 2k bytes.
 void mnetwrite(int client,int filedes,size_t nbytes){
 	int i = 0;
 	int canbind = 0;
@@ -673,7 +676,7 @@ void mnetwrite(int client,int filedes,size_t nbytes){
 		socker[i]->buf = buff;
 		socker[i]->nbytes = nb;
 	}
-	// remember to send nbyte
+	// sending the ports to be used.
 	if(errno != 0){
 		pthread_mutex_lock(&socktex);
 		for(i = 0;i<canbind;i++){
@@ -725,6 +728,7 @@ void mnetwrite(int client,int filedes,size_t nbytes){
 	return;
 }
 
+// Function to write file
 int netwrite(int client){
 	char * readBuf;
 	int filedes;
@@ -806,6 +810,7 @@ int netwrite(int client){
 	return 0;
 }
 
+// Deletes a node from the linked list when a file is closed.
 void deleteNode(int key){
 	struct fdl * temp = of;
 	struct fdl * prev = temp;
@@ -833,6 +838,7 @@ void deleteNode(int key){
 	return;
 }
 
+// This is the close method. IT closes the file, or attemps to.
 int netclose(int client){
 	int filedes;
 	char * filename = 0;
@@ -918,7 +924,7 @@ int netclose(int client){
 	return error;
 }
 
-
+// This is where the thread begins. It receives the first message which is an int corresponding to the desired mode. Uses a switch case.
 void * begin(void * c){
 	int client = *(int*)c;
 	int t;
@@ -949,7 +955,8 @@ void * begin(void * c){
 	return 0;
 }
 
-//mutex
+// This is extension D. It checks the queue for each file and make sure to notify each thread if it can continue. If it sees a thread waiting longer
+// than 2 seconds it will send a message to quit.
 void * bigBrother(){
 	while(1){
 		pthread_mutex_lock(&queuetex);
@@ -988,12 +995,8 @@ void * bigBrother(){
 	return 0;
 }
 
-int main(int argc, char ** argv){
-	// if(argc != 2){
-	// 	printf("ERROR: Invalid number of arguments\n");
-	// 	exit(1);
-	// }
-	// init ports and socket variables
+// This is the main function which binds the sockets and begings listening
+int main(){
 	signal(SIGPIPE, SIG_IGN);
 	pthread_t tid;
 	pthread_t monitor;
